@@ -1,0 +1,207 @@
+﻿@*
+A big thank you to ChatGPT for helping creating this!
+*@
+
+@typeparam TItem
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
+<div class="parent-wrapper">
+    <div style="@(AllowOverflow ? $"overflow-x: visible;margin-left:-{OverflowAllowedWidthOnLeft};" : "")">
+        <div class="scroller-container" style="--item-spacing:@ItemSpacing;--carousel-slide-width:@_itemsFullWidth;--end-spacer-width:@EndSpacerWidth;width:@(AllowOverflow ? $"calc({OverflowViewportWidth} + {OverflowAllowedWidthOnLeft})" : "initial");padding-left:@(AllowOverflow? OverflowAllowedWidthOnLeft : "0");"
+             @onmousedown="OnMouseDown"
+             @onmousemove="OnMouseMove"
+             @onmouseup="OnMouseUp"
+             @onmouseleave="OnMouseUp"
+             @ontouchstart="OnTouchStart"
+             @ontouchmove="OnTouchMove"
+             @ontouchend="OnTouchEnd"
+             @ref="ScrollerRef">
+            <div class="scroller-content">
+                @if (Items != null && ItemTemplate != null)
+                {
+                    var batchSize = CarouselMode ? CarouselItemsPerSlideSelector(_widthInfo) : 1;
+                    @foreach (var batch in Items.Chunk(batchSize))
+                    {
+                        <div class="scroller-item">
+                            <div class="@(CarouselMode ? "carousel-slide" : "")" style="height: 100%;">
+                                @foreach (var item in batch)
+                                {
+                                    @ItemTemplate(item)
+                                }
+                            </div>
+                        </div>
+                    }
+                    <div class="scroller-end-spacer"></div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private ElementReference ScrollerRef;
+    private bool isDragging = false;
+    private double startX;
+    private double scrollLeft;
+    private IJSObjectReference? _scrollerModule;
+    private DotNetObjectReference<HorizontalScroller<TItem>>? _dotNetRef;
+    private string _itemsFullWidth = "75vw";
+    private WidthInfo? _widthInfo;
+
+    [Parameter] public IEnumerable<TItem>? Items { get; set; }
+    [Parameter] public RenderFragment<TItem>? ItemTemplate { get; set; }
+    [Parameter] public double InertiaDecay { get; set; } = 0.9;
+    [Parameter] public int SnapDelay { get; set; } = 100;
+    /// <summary>
+    /// If setting true, you might want to add "overflow-x: hidden;" to an ancestor div being full-width
+    /// </summary>
+    [Parameter] public bool AllowOverflow { get; set; } = false;
+    [Parameter] public string ItemSpacing { get; set; } = "1rem";
+    /// <summary>
+    /// Scroll div width, if AllowOverflow is true
+    /// </summary>
+    [Parameter] public string OverflowViewportWidth { get; set; } = "100%";
+    /// <summary>
+    /// Allowed overflow on the left, if AllowOverflow is true
+    /// </summary>
+    [Parameter] public string OverflowAllowedWidthOnLeft { get; set; } = "10rem";
+    /// <summary>
+    /// Extra space at the end to allow snapping on the last element
+    /// </summary>
+    [Parameter] public string EndSpacerWidth { get; set; } = "300px";
+    /// <summary>
+    ///
+    /// </summary>
+    [Parameter] public bool EnableSnapping { get; set; } = true;
+    [Parameter] public bool EnableInertia { get; set; } = true;
+    [Parameter] public bool EnableDrag { get; set; } = true;
+    [Parameter] public bool CarouselMode { get; set; }
+    [Parameter] public Func<WidthInfo?, int> CarouselItemsPerSlideSelector { get; set; } = _ => 1;
+
+    [Parameter] public EventCallback<int> OnSnappedToIndex { get; set; }
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            _scrollerModule = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorHorizontalScroller/horizontalScroller.js");
+            if (_scrollerModule != null)
+            {
+                await _scrollerModule.InvokeVoidAsync("initScroller", ScrollerRef, _dotNetRef, new
+                {
+                    snapDelay = SnapDelay,
+                    inertiaDecay = (!EnableInertia ? 0.0 : InertiaDecay),
+                    enableSnapping = EnableSnapping,
+                    enableDrag = EnableDrag
+                });
+            }
+        }
+        await SyncWidth();
+    }
+
+    private async Task SyncWidth()
+    {
+        if (_scrollerModule != null && CarouselMode)
+            _widthInfo = await _scrollerModule.InvokeAsync<WidthInfo>("getSizeInfo", ScrollerRef);
+        FullWidthChanged();
+    }
+
+    private async Task OnMouseDown(MouseEventArgs e)
+    {
+        if (_scrollerModule != null && EnableDrag)
+            await _scrollerModule.InvokeVoidAsync("startDrag", ScrollerRef, e.ClientX);
+    }
+
+    private async Task OnMouseMove(MouseEventArgs e)
+    {
+        if (_scrollerModule != null)
+            await _scrollerModule.InvokeVoidAsync("dragMove", ScrollerRef, e.ClientX);
+    }
+
+    private async Task OnMouseUp(MouseEventArgs e)
+    {
+        if (_scrollerModule != null)
+            await _scrollerModule.InvokeVoidAsync("endDragWithInertia", ScrollerRef);
+    }
+
+    private async Task OnTouchStart(TouchEventArgs e)
+    {
+        if (_scrollerModule != null && e.Touches.Length > 0 && EnableDrag)
+            await _scrollerModule.InvokeVoidAsync("startDrag", ScrollerRef, e.Touches[0].ClientX);
+    }
+
+    private async Task OnTouchMove(TouchEventArgs e)
+    {
+        if (_scrollerModule != null && e.Touches.Length > 0)
+            await _scrollerModule.InvokeVoidAsync("dragMove", ScrollerRef, e.Touches[0].ClientX);
+    }
+
+    private async Task OnTouchEnd(TouchEventArgs e)
+    {
+        if (_scrollerModule != null)
+            await _scrollerModule.InvokeVoidAsync("endDragWithInertia", ScrollerRef);
+    }
+    public async Task SnapToNextAsync()
+    {
+        if (_scrollerModule != null)
+            await _scrollerModule.InvokeVoidAsync("snapToNext", ScrollerRef);
+    }
+
+    public async Task SnapToPreviousAsync()
+    {
+        if (_scrollerModule != null)
+            await _scrollerModule.InvokeVoidAsync("snapToPrevious", ScrollerRef);
+    }
+    [JSInvokable]
+    public async Task NotifySnapToIndex(int index)
+    {
+        if (OnSnappedToIndex.HasDelegate)
+        {
+            await OnSnappedToIndex.InvokeAsync(index);
+        }
+    }
+    [JSInvokable]
+    public async Task ResizedParent(WidthInfo widthInfo)
+    {
+        _widthInfo = widthInfo;
+        FullWidthChanged();
+    }
+
+    private void FullWidthChanged()
+    {
+        if (_widthInfo != null)
+        {
+            var expectedValue = $"{_widthInfo.ParentWidth}px";
+            if (expectedValue != _itemsFullWidth)
+            {
+                _itemsFullWidth = expectedValue;
+                StateHasChanged();
+            }
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_scrollerModule != null)
+            {
+                await _scrollerModule.InvokeVoidAsync("dispose", ScrollerRef);
+                await _scrollerModule.DisposeAsync();
+            }
+        }
+        catch (Exception e)
+        {
+            // ignored
+        }
+
+        if (_dotNetRef != null)
+            _dotNetRef.Dispose();
+    }
+
+    public record WidthInfo(double ParentWidth, double ViewportWidth);
+
+}

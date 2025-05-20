@@ -1,0 +1,34 @@
+﻿.scroller-container {
+    overflow-x: hidden;
+    overflow-y: hidden;
+    cursor: grab;
+    position: relative;
+}
+
+.scroller-content {
+    display: flex;
+    flex-direction: row;
+    white-space: nowrap;
+}
+
+.scroller-item {
+    flex: 0 0 auto;
+    margin-right: var(--item-spacing);
+    white-space: normal;
+}
+
+.carousel-slide {
+    width: var(--carousel-slide-width);
+    display: flex;
+    gap: var(--item-spacing);
+}
+
+::deep .carousel-slide > * {
+    flex: 1 1 0;
+    width: 0;
+}
+
+.scroller-end-spacer {
+    flex: 0 0 auto;
+    width: var(--end-spacer-width, 0px);
+}

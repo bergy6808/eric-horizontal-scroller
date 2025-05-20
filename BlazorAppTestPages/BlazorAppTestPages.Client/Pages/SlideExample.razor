@@ -1,0 +1,29 @@
+﻿@page "/slider"
+@rendermode InteractiveWebAssembly
+
+<PageTitle>Counter</PageTitle>
+
+<h1>Counter</h1>
+
+<p role="status">Current count: @currentCount</p>
+
+<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+<br/>
+<HorizontalScroller Items="Enumerable.Range(0, currentCount)">
+    <ItemTemplate>
+        <div class="card" style="width: 75vw; max-width: 500px;">
+            <div class="card-body">
+                Card #@context
+            </div>
+        </div>
+    </ItemTemplate>
+</HorizontalScroller>
+
+@code {
+    private int currentCount = 3;
+
+    private void IncrementCount()
+    {
+        currentCount++;
+    }
+}
