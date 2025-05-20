@@ -8,12 +8,14 @@
     <Title>BlazorHorizontalScroller</Title>
     <Authors>Eric Bergeron</Authors>
     <Company />
-    <Product />
+    <Product>BlazorHorizontalScroller</Product>
     <Description>A very light mobile-friendly scroller with capabilities such as smooth touch scroll, snapping to nearest item, carousel, overflowing, and more. </Description>
     <PackageProjectUrl>https://github.com/bergy6808/eric-horizontal-scroller</PackageProjectUrl>
     <RepositoryUrl>https://github.com/bergy6808/eric-horizontal-scroller</RepositoryUrl>
     <PackageTags>blazor;wasm;eric;scroller;carousel;touch;mobile</PackageTags>
     <PackageReleaseNotes>First publish. Please do not use for now</PackageReleaseNotes>
+    <AssemblyName>BlazorHorizontalScroller</AssemblyName>
+    <RootNamespace>BlazorHorizontalScroller</RootNamespace>
   </PropertyGroup>
 
 

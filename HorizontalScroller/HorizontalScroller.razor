@@ -15,7 +15,7 @@ A big thank you to ChatGPT for helping creating this!
              @ontouchstart="OnTouchStart"
              @ontouchmove="OnTouchMove"
              @ontouchend="OnTouchEnd"
-             @ref="ScrollerRef">
+             @ref="_scrollerRef">
             <div class="scroller-content">
                 @if (Items != null && ItemTemplate != null)
                 {
@@ -39,58 +39,95 @@ A big thank you to ChatGPT for helping creating this!
 </div>
 
 @code {
-    private ElementReference ScrollerRef;
-    private bool isDragging = false;
-    private double startX;
-    private double scrollLeft;
-    private IJSObjectReference? _scrollerModule;
-    private DotNetObjectReference<HorizontalScroller<TItem>>? _dotNetRef;
-    private string _itemsFullWidth = "75vw";
-    private WidthInfo? _widthInfo;
+    /// <summary>
+    /// Items
+    /// </summary>
+    [Parameter, EditorRequired] public IEnumerable<TItem>? Items { get; set; }
 
-    [Parameter] public IEnumerable<TItem>? Items { get; set; }
-    [Parameter] public RenderFragment<TItem>? ItemTemplate { get; set; }
-    [Parameter] public double InertiaDecay { get; set; } = 0.9;
-    [Parameter] public int SnapDelay { get; set; } = 100;
+    /// <summary>
+    /// Content template for each item. Use @context to access the item. If not using CarouselMode, you should fix the width of the items yourself.
+    /// </summary>
+    [Parameter, EditorRequired] public RenderFragment<TItem>? ItemTemplate { get; set; }
     /// <summary>
     /// If setting true, you might want to add "overflow-x: hidden;" to an ancestor div being full-width
     /// </summary>
-    [Parameter] public bool AllowOverflow { get; set; } = false;
+    [Parameter] public bool AllowOverflow { get; set; }
+
+    /// <summary>
+    /// Spacing between items
+    /// </summary>
     [Parameter] public string ItemSpacing { get; set; } = "1rem";
+
     /// <summary>
     /// Scroll div width, if AllowOverflow is true
     /// </summary>
     [Parameter] public string OverflowViewportWidth { get; set; } = "100%";
+
     /// <summary>
     /// Allowed overflow on the left, if AllowOverflow is true
     /// </summary>
     [Parameter] public string OverflowAllowedWidthOnLeft { get; set; } = "10rem";
+
     /// <summary>
     /// Extra space at the end to allow snapping on the last element
     /// </summary>
     [Parameter] public string EndSpacerWidth { get; set; } = "300px";
+
     /// <summary>
-    ///
+    /// If true, the scroller will have inertia when dragging. Speed will decay at a rate of InertiaDecay.
+    /// </summary>
+    [Parameter] public bool EnableInertia { get; set; } = true;
+
+    /// <summary>
+    /// Decay rate of the inertia. 1.0 means no decay (it will scroll by itself forever), 0.0 means instant stop.
+    /// </summary>
+    [Parameter] public double InertiaDecay { get; set; } = 0.9;
+
+    /// <summary>
+    /// Defaults to true. If false, the scroller will not respond to mouse/touch events.
+    /// </summary>
+    [Parameter] public bool EnableDrag { get; set; } = true;
+
+    /// <summary>
+    /// When drag is released and reached a minimum speed, the scroller will snap to the closest item (if true). Otherwise, it will just stop where it is.
     /// </summary>
     [Parameter] public bool EnableSnapping { get; set; } = true;
-    [Parameter] public bool EnableInertia { get; set; } = true;
-    [Parameter] public bool EnableDrag { get; set; } = true;
+
+    /// <summary>
+    /// Delays between reaching minimum speed (after dragging) and snapping to the closest item.
+    /// </summary>
+    [Parameter] public int SnapDelay { get; set; } = 100;
+
+    /// <summary>
+    /// Carousel mode enables items to take the full width of the available space (or share equally whit others using CarouselItemsPerSlideSelector)
+    /// </summary>
     [Parameter] public bool CarouselMode { get; set; }
+
+    /// <summary>
+    /// If component is in CarouselMode, each carousel slide will have this number of items.
+    /// </summary>
     [Parameter] public Func<WidthInfo?, int> CarouselItemsPerSlideSelector { get; set; } = _ => 1;
 
     [Parameter] public EventCallback<int> OnSnappedToIndex { get; set; }
 
-    [Inject] private IJSRuntime JS { get; set; } = default!;
+    [Inject] private IJSRuntime Js { get; set; } = null!;
+
+
+    private ElementReference _scrollerRef;
+    private IJSObjectReference? _scrollerModule;
+    private DotNetObjectReference<HorizontalScroller<TItem>>? _dotNetRef;
+    private string _itemsFullWidth = "75vw";
+    private WidthInfo? _widthInfo;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
             _dotNetRef = DotNetObjectReference.Create(this);
-            _scrollerModule = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorHorizontalScroller/horizontalScroller.js");
+            _scrollerModule = await Js.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorHorizontalScroller/horizontalScroller.js");
             if (_scrollerModule != null)
             {
-                await _scrollerModule.InvokeVoidAsync("initScroller", ScrollerRef, _dotNetRef, new
+                await _scrollerModule.InvokeVoidAsync("initScroller", _scrollerRef, _dotNetRef, new
                 {
                     snapDelay = SnapDelay,
                     inertiaDecay = (!EnableInertia ? 0.0 : InertiaDecay),
@@ -105,55 +142,55 @@ A big thank you to ChatGPT for helping creating this!
     private async Task SyncWidth()
     {
         if (_scrollerModule != null && CarouselMode)
-            _widthInfo = await _scrollerModule.InvokeAsync<WidthInfo>("getSizeInfo", ScrollerRef);
+            _widthInfo = await _scrollerModule.InvokeAsync<WidthInfo>("getSizeInfo", _scrollerRef);
         FullWidthChanged();
     }
 
     private async Task OnMouseDown(MouseEventArgs e)
     {
         if (_scrollerModule != null && EnableDrag)
-            await _scrollerModule.InvokeVoidAsync("startDrag", ScrollerRef, e.ClientX);
+            await _scrollerModule.InvokeVoidAsync("startDrag", _scrollerRef, e.ClientX);
     }
 
     private async Task OnMouseMove(MouseEventArgs e)
     {
         if (_scrollerModule != null)
-            await _scrollerModule.InvokeVoidAsync("dragMove", ScrollerRef, e.ClientX);
+            await _scrollerModule.InvokeVoidAsync("dragMove", _scrollerRef, e.ClientX);
     }
 
     private async Task OnMouseUp(MouseEventArgs e)
     {
         if (_scrollerModule != null)
-            await _scrollerModule.InvokeVoidAsync("endDragWithInertia", ScrollerRef);
+            await _scrollerModule.InvokeVoidAsync("endDragWithInertia", _scrollerRef);
     }
 
     private async Task OnTouchStart(TouchEventArgs e)
     {
         if (_scrollerModule != null && e.Touches.Length > 0 && EnableDrag)
-            await _scrollerModule.InvokeVoidAsync("startDrag", ScrollerRef, e.Touches[0].ClientX);
+            await _scrollerModule.InvokeVoidAsync("startDrag", _scrollerRef, e.Touches[0].ClientX);
     }
 
     private async Task OnTouchMove(TouchEventArgs e)
     {
         if (_scrollerModule != null && e.Touches.Length > 0)
-            await _scrollerModule.InvokeVoidAsync("dragMove", ScrollerRef, e.Touches[0].ClientX);
+            await _scrollerModule.InvokeVoidAsync("dragMove", _scrollerRef, e.Touches[0].ClientX);
     }
 
     private async Task OnTouchEnd(TouchEventArgs e)
     {
         if (_scrollerModule != null)
-            await _scrollerModule.InvokeVoidAsync("endDragWithInertia", ScrollerRef);
+            await _scrollerModule.InvokeVoidAsync("endDragWithInertia", _scrollerRef);
     }
     public async Task SnapToNextAsync()
     {
         if (_scrollerModule != null)
-            await _scrollerModule.InvokeVoidAsync("snapToNext", ScrollerRef);
+            await _scrollerModule.InvokeVoidAsync("snapToNext", _scrollerRef);
     }
 
     public async Task SnapToPreviousAsync()
     {
         if (_scrollerModule != null)
-            await _scrollerModule.InvokeVoidAsync("snapToPrevious", ScrollerRef);
+            await _scrollerModule.InvokeVoidAsync("snapToPrevious", _scrollerRef);
     }
     [JSInvokable]
     public async Task NotifySnapToIndex(int index)
@@ -164,10 +201,11 @@ A big thank you to ChatGPT for helping creating this!
         }
     }
     [JSInvokable]
-    public async Task ResizedParent(WidthInfo widthInfo)
+    public Task ResizedParent(WidthInfo widthInfo)
     {
         _widthInfo = widthInfo;
         FullWidthChanged();
+        return Task.CompletedTask;
     }
 
     private void FullWidthChanged()
@@ -189,17 +227,16 @@ A big thank you to ChatGPT for helping creating this!
         {
             if (_scrollerModule != null)
             {
-                await _scrollerModule.InvokeVoidAsync("dispose", ScrollerRef);
+                await _scrollerModule.InvokeVoidAsync("dispose", _scrollerRef);
                 await _scrollerModule.DisposeAsync();
             }
         }
-        catch (Exception e)
+        catch (Exception)
         {
             // ignored
         }
 
-        if (_dotNetRef != null)
-            _dotNetRef.Dispose();
+        _dotNetRef?.Dispose();
     }
 
     public record WidthInfo(double ParentWidth, double ViewportWidth);
