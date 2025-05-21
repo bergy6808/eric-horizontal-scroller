@@ -16,6 +16,8 @@
     <PackageReleaseNotes>First publish. Please do not use for now</PackageReleaseNotes>
     <AssemblyName>BlazorHorizontalScroller</AssemblyName>
     <RootNamespace>BlazorHorizontalScroller</RootNamespace>
+	  <VersionPrefix>1.0.1</VersionPrefix>
+    <IsPackable>true</IsPackable>
   </PropertyGroup>
 
 
