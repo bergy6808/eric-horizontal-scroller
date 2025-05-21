@@ -62,7 +62,8 @@
     {
         if (arg == null)
             return 2;
-        return (int)arg.ParentWidth % 200;
+        var fit = (int)arg.ParentWidth % 200;
+        return Math.Clamp(fit, 1, 4);
     }
 
 }

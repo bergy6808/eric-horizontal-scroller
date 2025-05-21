@@ -24,8 +24,8 @@
 }
 
 ::deep .carousel-slide > * {
-    flex: 1 1 0;
-    width: 0;
+    /*flex: 1 1 0;*/
+    width: calc((var(--carousel-slide-width) - ((var(--items-per-slide) - 1) * var(--item-spacing))) / var(--items-per-slide));
 }
 
 .scroller-end-spacer {
