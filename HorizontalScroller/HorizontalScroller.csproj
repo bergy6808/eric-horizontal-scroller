@@ -18,6 +18,8 @@
     <RootNamespace>BlazorHorizontalScroller</RootNamespace>
 	  <VersionPrefix>1.0.1</VersionPrefix>
     <IsPackable>true</IsPackable>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <IncludeSymbols>False</IncludeSymbols>
   </PropertyGroup>
 
 
