@@ -16,14 +16,14 @@ A big thank you to ChatGPT for helping creating this!
              @ontouchmove="OnTouchMove"
              @ontouchend="OnTouchEnd"
              @ref="_scrollerRef">
-            <div class="scroller-content">
+            <div class="scroller-content" role="list">
                 @if (Items != null && ItemTemplate != null)
                 {
                     var batchSize = CarouselMode ? CarouselItemsPerSlideSelector(_widthInfo) : 1;
-                    @foreach (var batch in Items.Chunk(batchSize))
+                    @foreach (var batch in Items.Chunk(batchSize <= 0 ? 1 : batchSize))
                     {
                         <div class="scroller-item">
-                            <div class="@(CarouselMode ? "carousel-slide" : "")" style="height: 100%;">
+                            <div class="@(CarouselMode ? "carousel-slide" : "")" style="height: 100%;@(CarouselMode ? "" : $"width:{ItemWidth};") @(EnableDrag ? "user-select: none;" : "")">
                                 @foreach (var item in batch)
                                 {
                                     @ItemTemplate(item)
@@ -57,6 +57,11 @@ A big thank you to ChatGPT for helping creating this!
     /// Spacing between items
     /// </summary>
     [Parameter] public string ItemSpacing { get; set; } = "1rem";
+
+    /// <summary>
+    /// When carousel mode is off, sets the width of items. Consider 75vw for mobile
+    /// </summary>
+    [Parameter] public string ItemWidth { get; set; } = "auto";
 
     /// <summary>
     /// Scroll div width, if AllowOverflow is true
@@ -104,7 +109,7 @@ A big thank you to ChatGPT for helping creating this!
     [Parameter] public bool CarouselMode { get; set; }
 
     /// <summary>
-    /// If component is in CarouselMode, each carousel slide will have this number of items.
+    /// If component is in CarouselMode, each carousel slide will have this number of items. You can choose from either parent size of viewport size, but watch out: WidthInfo is null on first render
     /// </summary>
     [Parameter] public Func<WidthInfo?, int> CarouselItemsPerSlideSelector { get; set; } = _ => 1;
 
@@ -113,7 +118,7 @@ A big thank you to ChatGPT for helping creating this!
     [Inject] private IJSRuntime Js { get; set; } = null!;
 
 
-    private ElementReference _scrollerRef;
+    private ElementReference? _scrollerRef;
     private IJSObjectReference? _scrollerModule;
     private DotNetObjectReference<HorizontalScroller<TItem>>? _dotNetRef;
     private string _itemsFullWidth = "75vw";
@@ -197,6 +202,11 @@ A big thank you to ChatGPT for helping creating this!
         if (_scrollerModule != null)
             await _scrollerModule.InvokeVoidAsync("snapToPrevious", _scrollerRef);
     }
+    public async Task SnapToIndexAsync(int index)
+    {
+        if (_scrollerModule != null)
+            await _scrollerModule.InvokeVoidAsync("snapToIndex", _scrollerRef, index);
+    }
     [JSInvokable]
     public async Task NotifySnapToIndex(int index)
     {
@@ -230,7 +240,7 @@ A big thank you to ChatGPT for helping creating this!
     {
         try
         {
-            if (_scrollerModule != null)
+            if (_scrollerModule != null && _scrollerRef != null)
             {
                 await _scrollerModule.InvokeVoidAsync("dispose", _scrollerRef);
                 await _scrollerModule.DisposeAsync();
@@ -244,6 +254,5 @@ A big thank you to ChatGPT for helping creating this!
         _dotNetRef?.Dispose();
     }
 
-    public record WidthInfo(double ParentWidth, double ViewportWidth);
 
 }

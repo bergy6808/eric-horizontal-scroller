@@ -1,0 +1,57 @@
+﻿@page "/carousel"
+@rendermode InteractiveWebAssembly
+@using BlazorHorizontalScroller
+
+<PageTitle>Carousel</PageTitle>
+<div style="overflow-x: hidden;">
+<div class="container-lg">
+    <h1>Carousel example</h1>
+
+    <p role="status">Current count: @currentCount</p>
+
+    <button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+    <br />
+
+    <h2>A very standard carousel with buttons</h2>
+    <button class="btn btn-outlined-primary" @onclick="() => _scrollerWithButtons.SnapToPreviousAsync()">Prev</button>
+    <button class="btn btn-outlined-primary" @onclick="() => _scrollerWithButtons.SnapToNextAsync()">Next</button>
+    <button class="btn btn-outlined-primary" @onclick="() => _scrollerWithButtons.SnapToIndexAsync(2)">3rd</button>
+    <HorizontalScroller @ref="_scrollerWithButtons" Items="Enumerable.Range(0, currentCount)" CarouselMode="true">
+        <ItemTemplate>
+            <div class="card bg-primary">
+                <div class="card-body">
+                    Card #@context
+                </div>
+            </div>
+        </ItemTemplate>
+    </HorizontalScroller>
+
+    <h2>A carousel with responsive number of items</h2>
+    <HorizontalScroller Items="Enumerable.Range(0, currentCount)" CarouselMode="true" CarouselItemsPerSlideSelector="GetItemsPerSlide">
+        <ItemTemplate>
+            <div class="card bg-primary">
+                <div class="card-body">
+                    Card #@context
+                </div>
+            </div>
+        </ItemTemplate>
+    </HorizontalScroller>
+</div>
+</div>
+@code {
+    private int currentCount = 3;
+    private HorizontalScroller<int> _scrollerWithButtons;
+
+    private void IncrementCount()
+    {
+        currentCount++;
+    }
+
+    private int GetItemsPerSlide(WidthInfo? arg)
+    {
+        if (arg == null)
+            return 2;
+        return (int)arg.ParentWidth % 200;
+    }
+
+}

@@ -1,26 +1,98 @@
 ﻿@page "/slider"
 @rendermode InteractiveWebAssembly
+@using BlazorHorizontalScroller
 
-<PageTitle>Counter</PageTitle>
+<PageTitle>Slider</PageTitle>
 
-<h1>Counter</h1>
 
-<p role="status">Current count: @currentCount</p>
+<div style="overflow-x: hidden;">
+    <div class="container-lg">
+        <h1>Sliders example</h1>
 
-<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
-<br/>
-<HorizontalScroller Items="Enumerable.Range(0, currentCount)">
-    <ItemTemplate>
-        <div class="card" style="width: 75vw; max-width: 500px;">
-            <div class="card-body">
-                Card #@context
-            </div>
-        </div>
-    </ItemTemplate>
-</HorizontalScroller>
+        <p role="status">Current count: @currentCount</p>
 
+        <button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+        <br />
+
+        <h2>Sliding small width</h2>
+        <HorizontalScroller Items="Enumerable.Range(0, currentCount)" ItemWidth="30vw">
+            <ItemTemplate>
+                <div class="card bg-primary">
+                    <div class="card-body">
+                        Card #@context
+                    </div>
+                </div>
+            </ItemTemplate>
+        </HorizontalScroller>
+
+        <h2>Sliding large width</h2>
+        <HorizontalScroller Items="Enumerable.Range(0, currentCount)" ItemWidth="85vw">
+            <ItemTemplate>
+                <div class="card bg-primary">
+                    <div class="card-body">
+                        Card #@context
+                    </div>
+                </div>
+            </ItemTemplate>
+        </HorizontalScroller>
+        <h2>Sliding width auto</h2>
+        <HorizontalScroller Items="Enumerable.Range(0, currentCount)">
+            <ItemTemplate>
+                <div class="card bg-primary" style="width: @((context + 2) * 10);">
+                    <div class="card-body">
+                        #@context
+                    </div>
+                </div>
+            </ItemTemplate>
+        </HorizontalScroller>
+        <h2>Sliding width auto #2</h2>
+        <HorizontalScroller Items="Enumerable.Range(0, currentCount)">
+            <ItemTemplate>
+                <div class="card bg-primary" style="width: @((context + 2) * 10);">
+                    <div class="card-body">
+                        @foreach (var x in Enumerable.Range(0, context + 1))
+                        {
+                            <span>Word ddsd sddddddddddddddddddddddddddddddddd @x </span>
+                        }
+                    </div>
+                </div>
+            </ItemTemplate>
+        </HorizontalScroller>
+        <h2>Sliding with buttons</h2>
+        <button class="btn btn-outlined-primary" @onclick="() => _scrollerWithButtons.SnapToPreviousAsync()">Prev</button>
+        <button class="btn btn-outlined-primary" @onclick="() => _scrollerWithButtons.SnapToNextAsync()">Next</button>
+        <button class="btn btn-outlined-primary" @onclick="() => _scrollerWithButtons.SnapToIndexAsync(2)">3rd</button>
+        <HorizontalScroller @ref="_scrollerWithButtons" Items="Enumerable.Range(0, currentCount)">
+            <ItemTemplate>
+                <div class="card bg-primary" style="width: @((context + 2) * 10);">
+                    <div class="card-body">
+                        @foreach (var x in Enumerable.Range(0, context + 1))
+                        {
+                            <span>Word @x </span>
+                        }
+                    </div>
+                </div>
+            </ItemTemplate>
+        </HorizontalScroller>
+
+        <h2>Sliding with overflow</h2>
+        <HorizontalScroller Items="Enumerable.Range(0, currentCount)" ItemWidth="45vw" AllowOverflow="true">
+            <ItemTemplate>
+                <div class="card bg-primary">
+                    <div class="card-body">
+                        @foreach (var x in Enumerable.Range(0, context + 1))
+                        {
+                            <span>Word @x </span>
+                        }
+                    </div>
+                </div>
+            </ItemTemplate>
+        </HorizontalScroller>
+    </div>
+</div>
 @code {
     private int currentCount = 3;
+    private HorizontalScroller<int> _scrollerWithButtons;
 
     private void IncrementCount()
     {

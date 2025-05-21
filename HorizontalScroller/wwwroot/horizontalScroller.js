@@ -130,5 +130,9 @@ export function snapToIndex(element, index) {
 
 export function dispose(element) {
     const state = scrollers.get(element);
-    window.removeEventListener('resize', state.handleResize);
+    if (state) {
+        window.removeEventListener('resize', state.handleResize);
+        console.log('handler removed');
+        scrollers.delete(element);
+    }
 }
