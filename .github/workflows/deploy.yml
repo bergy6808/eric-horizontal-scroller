@@ -21,6 +21,7 @@ jobs:
       uses: nizarmah/auto-minify@v3
       with:
         directory: 'HorizontalScroller/wwwroot'
+        js_engine: 'uglify-js'
 
     - name: Build
       run: dotnet build HorizontalScroller --configuration Release /p:Version=${VERSION}
