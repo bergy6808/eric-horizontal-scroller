@@ -240,11 +240,8 @@ A big thank you to ChatGPT for helping creating this!
     {
         try
         {
-            if (_scrollerModule != null && _scrollerRef != null)
-            {
-                await _scrollerModule.InvokeVoidAsync("dispose", _scrollerRef);
+            if (_scrollerModule != null)
                 await _scrollerModule.DisposeAsync();
-            }
         }
         catch (Exception)
         {

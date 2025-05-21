@@ -6,6 +6,19 @@ export function initScroller(element, dotNetRef, options) {
         dotNetRef.invokeMethodAsync('ResizedParent', getSizeInfo(element));
     }
     window.addEventListener('resize', handleResize)
+    var parentWrapper = element.closest('.parent-wrapper');
+    const mutationCallback = (mutationList, observer) => {
+        for (const mutation of mutationList) {
+            var nodes = Array.from(mutation.removedNodes);
+            var directMatch = nodes.indexOf(parentWrapper) > -1
+            var parentMatch = nodes.some(parent => parent.contains(parentWrapper));
+            if (directMatch || parentMatch) {
+                dispose(element);
+            }
+        }
+    };
+    const observer = new MutationObserver(mutationCallback);
+    observer.observe(document.body, { attributes: false, childList: true, subtree: true });
     scrollers.set(element, {
         isDragging: false,
         velocity: 0,
@@ -14,6 +27,7 @@ export function initScroller(element, dotNetRef, options) {
         snapTimeout: null,
         currentIndex: 0,
         dotNetRef: dotNetRef,
+        observer: observer,
         handleResize: handleResize,
         opts: options
     });
@@ -128,9 +142,10 @@ export function snapToIndex(element, index) {
 }
 
 
-export function dispose(element) {
+function dispose(element) {
     const state = scrollers.get(element);
     if (state) {
+        state.observer.disconnect();
         window.removeEventListener('resize', state.handleResize);
         console.log('handler removed');
         scrollers.delete(element);
