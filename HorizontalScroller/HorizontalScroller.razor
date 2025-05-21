@@ -9,11 +9,9 @@ A big thank you to ChatGPT for helping creating this!
     <div style="@(AllowOverflow ? $"overflow-x: visible;margin-left:-{OverflowAllowedWidthOnLeft};" : "")">
         <div class="scroller-container" style="--item-spacing:@ItemSpacing;--carousel-slide-width:@_itemsFullWidth;--end-spacer-width:@EndSpacerWidth;width:@(AllowOverflow ? $"calc({OverflowViewportWidth} + {OverflowAllowedWidthOnLeft})" : "initial");padding-left:@(AllowOverflow? OverflowAllowedWidthOnLeft : "0");"
              @onmousedown="OnMouseDown"
-             @onmousemove="OnMouseMove"
              @onmouseup="OnMouseUp"
              @onmouseleave="OnMouseUp"
              @ontouchstart="OnTouchStart"
-             @ontouchmove="OnTouchMove"
              @ontouchend="OnTouchEnd"
              @ref="_scrollerRef">
             <div class="scroller-content" role="list">
@@ -113,7 +111,14 @@ A big thank you to ChatGPT for helping creating this!
     /// </summary>
     [Parameter] public Func<WidthInfo?, int> CarouselItemsPerSlideSelector { get; set; } = _ => 1;
 
-    [Parameter] public EventCallback<int> OnSnappedToIndex { get; set; }
+    /// <summary>
+    /// Sets the selected slide index. 
+    /// </summary>
+    [Parameter] public int SelectedIndex { get; set; }
+    /// <summary>
+    /// Callback on selected slide changed
+    /// </summary>
+    [Parameter] public EventCallback<int> SelectedIndexChanged { get; set; }
 
     [Inject] private IJSRuntime Js { get; set; } = null!;
 
@@ -123,6 +128,16 @@ A big thank you to ChatGPT for helping creating this!
     private DotNetObjectReference<HorizontalScroller<TItem>>? _dotNetRef;
     private string _itemsFullWidth = "75vw";
     private WidthInfo? _widthInfo;
+    private int _selectedIndex;
+    private bool _isDragging;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_scrollerModule != null && _selectedIndex != SelectedIndex && !_isDragging)
+        {
+            await SnapToIndexAsync(SelectedIndex);
+        }
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -139,6 +154,7 @@ A big thank you to ChatGPT for helping creating this!
             {
                 await _scrollerModule.InvokeVoidAsync("initScroller", _scrollerRef, _dotNetRef, new
                 {
+                    startIndex = SelectedIndex,
                     snapDelay = SnapDelay,
                     inertiaDecay = (!EnableInertia ? 0.0 : InertiaDecay),
                     enableSnapping = EnableSnapping,
@@ -159,37 +175,37 @@ A big thank you to ChatGPT for helping creating this!
     private async Task OnMouseDown(MouseEventArgs e)
     {
         if (_scrollerModule != null && EnableDrag)
+        {
             await _scrollerModule.InvokeVoidAsync("startDrag", _scrollerRef, e.ClientX);
-    }
-
-    private async Task OnMouseMove(MouseEventArgs e)
-    {
-        if (_scrollerModule != null)
-            await _scrollerModule.InvokeVoidAsync("dragMove", _scrollerRef, e.ClientX);
+            _isDragging = true;
+        }
     }
 
     private async Task OnMouseUp(MouseEventArgs e)
     {
         if (_scrollerModule != null)
-            await _scrollerModule.InvokeVoidAsync("endDragWithInertia", _scrollerRef);
+        {
+            await _scrollerModule.InvokeVoidAsync("endDrag", _scrollerRef);
+            _isDragging = false;
+        }
     }
 
     private async Task OnTouchStart(TouchEventArgs e)
     {
         if (_scrollerModule != null && e.Touches.Length > 0 && EnableDrag)
+        {
             await _scrollerModule.InvokeVoidAsync("startDrag", _scrollerRef, e.Touches[0].ClientX);
-    }
-
-    private async Task OnTouchMove(TouchEventArgs e)
-    {
-        if (_scrollerModule != null && e.Touches.Length > 0)
-            await _scrollerModule.InvokeVoidAsync("dragMove", _scrollerRef, e.Touches[0].ClientX);
+            _isDragging = true;
+        }
     }
 
     private async Task OnTouchEnd(TouchEventArgs e)
     {
         if (_scrollerModule != null)
-            await _scrollerModule.InvokeVoidAsync("endDragWithInertia", _scrollerRef);
+        {
+            await _scrollerModule.InvokeVoidAsync("endDrag", _scrollerRef);
+            _isDragging = false;
+        }
     }
     public async Task SnapToNextAsync()
     {
@@ -205,14 +221,29 @@ A big thank you to ChatGPT for helping creating this!
     public async Task SnapToIndexAsync(int index)
     {
         if (_scrollerModule != null)
+        {
+            _selectedIndex = index;
             await _scrollerModule.InvokeVoidAsync("snapToIndex", _scrollerRef, index);
+        }
     }
     [JSInvokable]
     public async Task NotifySnapToIndex(int index)
     {
-        if (OnSnappedToIndex.HasDelegate)
+        if (SelectedIndex != index)
         {
-            await OnSnappedToIndex.InvokeAsync(index);
+            SelectedIndex = index;
+            _selectedIndex = index;
+            await SelectedIndexChanged.InvokeAsync(index);
+        }
+    }
+    [JSInvokable]
+    public async Task NotifyNearestIndexChanged(int index)
+    {
+        if (SelectedIndex != index)
+        {
+            SelectedIndex = index;
+            _selectedIndex = index;
+            await SelectedIndexChanged.InvokeAsync(index);
         }
     }
     [JSInvokable]

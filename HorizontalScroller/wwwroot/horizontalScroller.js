@@ -2,10 +2,18 @@ let scrollers = new Map();
 
 export function initScroller(element, dotNetRef, options) {
     var handleResize = () => {
+        updateNearest(element);
         snapToNearest(element);
         dotNetRef.invokeMethodAsync('ResizedParent', getSizeInfo(element));
     }
     window.addEventListener('resize', handleResize)
+    element.addEventListener('touchmove', e => {
+        if (e.touches.length)
+            dragMove(element, e.touches[0].clientX)
+    })
+    element.addEventListener('mousemove', e => {
+        dragMove(element, e.clientX)
+    })
     var parentWrapper = element.closest('.parent-wrapper');
     const mutationCallback = (mutationList, observer) => {
         for (const mutation of mutationList) {
@@ -29,8 +37,11 @@ export function initScroller(element, dotNetRef, options) {
         dotNetRef: dotNetRef,
         observer: observer,
         handleResize: handleResize,
+        nearestIndex: 0,
         opts: options
     });
+    if (options.startIndex != 0)
+        snapToIndex(element, options.startIndex, 'auto');
 }
 
 export function getSizeInfo(element) {
@@ -59,9 +70,10 @@ export function dragMove(element, clientX) {
     element.scrollLeft -= delta;
     state.velocity = delta;
     state.lastX = clientX;
+    updateNearest(element);
 }
 
-export function endDragWithInertia(element) {
+export function endDrag(element) {
     const state = scrollers.get(element);
     if (!state) return;
 
@@ -77,6 +89,7 @@ export function endDragWithInertia(element) {
 
         element.scrollLeft -= state.velocity;
         state.velocity *= state.opts.inertiaDecay;
+        updateNearest(element);
 
         state.animationFrame = requestAnimationFrame(inertiaScroll);
     }
@@ -89,8 +102,22 @@ function scheduleSnap(element) {
     if (!state) return;
 
     state.snapTimeout = setTimeout(() => {
+        updateNearest(element);
         snapToNearest(element);
     }, state.opts.snapDelay);
+}
+function updateNearest(element) {
+    const item = element.querySelector('.scroller-item');
+    if (!item) return;
+
+    const itemWidth = item.offsetWidth;
+    const currentScroll = element.scrollLeft;
+    const nearestIndex = Math.round(currentScroll / itemWidth);
+    const state = scrollers.get(element);
+    if (state.nearestIndex != nearestIndex) {
+        state.nearestIndex = nearestIndex;
+        state.dotNetRef.invokeMethodAsync("NotifyNearestIndexChanged", nearestIndex)
+    }
 }
 
 export function snapToNext(element) {
@@ -110,16 +137,11 @@ export function snapToPrevious(element) {
 }
 
 export function snapToNearest(element) {
-    const item = element.querySelector('.scroller-item');
-    if (!item) return;
-
-    const itemWidth = item.offsetWidth;
-    const currentScroll = element.scrollLeft;
-    const nearestIndex = Math.round(currentScroll / itemWidth);
-    snapToIndex(element, nearestIndex);
+    const state = scrollers.get(element);
+    snapToIndex(element, state.nearestIndex);
 }
 
-export function snapToIndex(element, index) {
+export function snapToIndex(element, index, scrollToBehavior = 'smooth') {
     const state = scrollers.get(element);
     const items = Array.from(element.querySelectorAll('.scroller-item'));
     if (items.length == 0 || isNaN(index))
@@ -135,7 +157,7 @@ export function snapToIndex(element, index) {
     state.currentIndex = index;
     element.scrollTo({
         left: targetScroll,
-        behavior: 'smooth'
+        behavior: scrollToBehavior
     });
     if (oldIndex != state.currentIndex)
         state.dotNetRef.invokeMethodAsync("NotifySnapToIndex", index)

@@ -23,7 +23,7 @@ This nuget is subject to big changes, use with precaution.
 
 ## 📦 Installation
 
-Add the NuGet package to your project (assuming you're publishing it):
+Add the NuGet package to your project:
 
 ```bash
 dotnet add package BlazorHorizontalScroller
@@ -79,23 +79,25 @@ When using AllowOverflow=true, you should style some ancestor with `overflow-x: 
 
 ## 📐 Parameters
 
-| Parameter                        | Type                           | Default     | Description |
-|:--------------------------------|:--------------------------------|:------------|:-------------|
-| `Items`                          | `IEnumerable<TItem>`             | **Required** | Collection of items to render |
-| `ItemTemplate`                   | `RenderFragment<TItem>`          | **Required** | Template for each item |
-| `ItemSpacing`                    | `string`                        | `"1rem"`    | Spacing between items |
-| `AllowOverflow`                  | `bool`                          | `false`     | Allow horizontal overflow |
-| `OverflowViewportWidth`          | `string`                        | `"100%"`    | Width of the viewport when overflow is enabled |
-| `OverflowAllowedWidthOnLeft`     | `string`                        | `"10rem"`   | Width of allowed overflow on the left |
-| `EndSpacerWidth`                 | `string`                        | `"300px"`   | Space after the last item |
-| `EnableInertia`                  | `bool`                          | `true`      | Enable inertia scrolling |
-| `InertiaDecay`                   | `double`                        | `0.9`       | Decay rate of inertia |
-| `EnableDrag`                     | `bool`                          | `true`      | Enable drag interactions |
-| `EnableSnapping`                 | `bool`                          | `true`      | Snap to the nearest item after drag |
-| `SnapDelay`                      | `int`                           | `100`       | Delay before snapping (ms) |
-| `CarouselMode`                   | `bool`                          | `false`     | Enable carousel-like behavior |
-| `CarouselItemsPerSlideSelector`  | `Func<WidthInfo?, int>`         | `_ => 1`    | Number of items per slide based on viewport width |
-| `OnSnappedToIndex`               | `EventCallback<int>`            | —            | Invoked when snapped to an item |
+| Parameter                       | Type                    | Default      | Description                                       |
+| :------------------------------ | :---------------------- | :----------- | :------------------------------------------------ |
+| `Items`                         | `IEnumerable<TItem>`    | **Required** | Collection of items to render                     |
+| `ItemTemplate`                  | `RenderFragment<TItem>` | **Required** | Template for each item                            |
+| `ItemSpacing`                   | `string`                | `"1rem"`     | Spacing between items                             |
+| `AllowOverflow`                 | `bool`                  | `false`      | Allow horizontal overflow                         |
+| `OverflowViewportWidth`         | `string`                | `"100%"`     | Width of the viewport when overflow is enabled    |
+| `OverflowAllowedWidthOnLeft`    | `string`                | `"10rem"`    | Width of allowed overflow on the left             |
+| `EndSpacerWidth`                | `string`                | `"300px"`    | Space after the last item                         |
+| `EnableInertia`                 | `bool`                  | `true`       | Enable inertia scrolling                          |
+| `InertiaDecay`                  | `double`                | `0.9`        | Decay rate of inertia                             |
+| `EnableDrag`                    | `bool`                  | `true`       | Enable drag interactions                          |
+| `EnableSnapping`                | `bool`                  | `true`       | Snap to the nearest item after drag               |
+| `SnapDelay`                     | `int`                   | `100`        | Delay before snapping (ms)                        |
+| `CarouselMode`                  | `bool`                  | `false`      | Enable carousel-like behavior                     |
+| `CarouselItemsPerSlideSelector` | `Func<WidthInfo?, int>` | `_ => 1`     | Number of items per slide based on viewport width |
+| `OnSnappedToIndex`              | `EventCallback<int>`    | —            | Invoked when snapped to an item                   |
+| `SelectedIndex`                 | `int`                   | `0`          | Sets the selected slide index                     |
+| `SelectedIndexChanged`          | `EventCallback<int>`    | —            | Callback invoked when selected index changes      |
 
 ---
 
@@ -105,6 +107,7 @@ When using AllowOverflow=true, you should style some ancestor with `overflow-x: 
 |:--------------------|:-------------|
 | `SnapToNextAsync()`   | Programmatically snap to the next item |
 | `SnapToPreviousAsync()` | Programmatically snap to the previous item |
+| `SnapToIndexAsync()` | Programmatically snap to the selected slide index (not item index) |
 
 ---
 

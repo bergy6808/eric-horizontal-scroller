@@ -26,6 +26,17 @@
         </ItemTemplate>
     </HorizontalScroller>
 
+    <h2>A very standard carousel syncing position with counter</h2>
+    <HorizontalScroller Items="Enumerable.Range(0, 5)" CarouselMode="true" @bind-SelectedIndex="@currentCount">
+        <ItemTemplate>
+            <div class="card bg-primary">
+                <div class="card-body">
+                    Card #@context
+                </div>
+            </div>
+        </ItemTemplate>
+    </HorizontalScroller>
+
     <h2>A carousel with responsive number of items</h2>
     <HorizontalScroller Items="Enumerable.Range(0, currentCount)" CarouselMode="true" CarouselItemsPerSlideSelector="GetItemsPerSlide">
         <ItemTemplate>
