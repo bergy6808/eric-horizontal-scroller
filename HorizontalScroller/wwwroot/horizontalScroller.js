@@ -4,18 +4,25 @@ export function initScroller(element, dotNetRef, options) {
     var handleResize = () => {
         updateNearest(element);
         snapToNearest(element);
-        dotNetRef.invokeMethodAsync('ResizedParent', getSizeInfo(element));
+        var sizeInfo = getSizeInfo(element);
+        dotNetRef.invokeMethodAsync('ResizedParent', sizeInfo);
     }
     window.addEventListener('resize', handleResize)
     element.addEventListener('touchmove', e => {
         if (e.touches.length)
             dragMove(element, e.touches[0].clientX)
-    })
+    });
     element.addEventListener('mousemove', e => {
         dragMove(element, e.clientX)
-    })
+    });
+    element.addEventListener('scrollend', () => {
+        const state = scrollers.get(element);
+        if (!state) return;
+        state.priorityScrollInProgress = false;
+    });
     var parentWrapper = element.closest('.parent-wrapper');
-    const mutationCallback = (mutationList, observer) => {
+    // observe body
+    const bodyObserver = new MutationObserver((mutationList) => {
         for (const mutation of mutationList) {
             var nodes = Array.from(mutation.removedNodes);
             var directMatch = nodes.indexOf(parentWrapper) > -1
@@ -24,9 +31,14 @@ export function initScroller(element, dotNetRef, options) {
                 dispose(element);
             }
         }
-    };
-    const observer = new MutationObserver(mutationCallback);
-    observer.observe(document.body, { attributes: false, childList: true, subtree: true });
+    });
+    bodyObserver.observe(document.body, { attributes: false, childList: true, subtree: true });
+    // observe parent
+    var visibilityObserver = new ResizeObserver((entries) => {
+            visibilityChanged(element);
+    });
+    visibilityObserver.observe(element);
+
     scrollers.set(element, {
         isDragging: false,
         velocity: 0,
@@ -34,8 +46,9 @@ export function initScroller(element, dotNetRef, options) {
         animationFrame: null,
         snapTimeout: null,
         currentIndex: 0,
+        visible: element.offsetParent !== null,
         dotNetRef: dotNetRef,
-        observer: observer,
+        observers: Array.from([bodyObserver, visibilityObserver]),
         handleResize: handleResize,
         nearestIndex: 0,
         opts: options
@@ -46,10 +59,12 @@ export function initScroller(element, dotNetRef, options) {
 
 export function getSizeInfo(element) {
     var parentWrapper = element.closest('.parent-wrapper');
-    return {
-        ParentWidth: parentWrapper.offsetWidth,
-        ViewportWidth: window.innerWidth
+    var res = {
+        ParentWidth: parentWrapper.offsetWidth || 0,
+        ViewportWidth: window.innerWidth || 0
     };
+    //console.log(res);
+    return res;
 }
 
 export function startDrag(element, clientX) {
@@ -102,6 +117,8 @@ function scheduleSnap(element) {
     if (!state) return;
 
     state.snapTimeout = setTimeout(() => {
+        if (state.priorityScrollInProgress)
+            return;
         updateNearest(element);
         snapToNearest(element);
     }, state.opts.snapDelay);
@@ -112,12 +129,19 @@ function updateNearest(element) {
 
     const itemWidth = item.offsetWidth;
     const currentScroll = element.scrollLeft;
-    const nearestIndex = Math.round(currentScroll / itemWidth);
     const state = scrollers.get(element);
-    if (state.nearestIndex != nearestIndex) {
+    const nearestIndex = Math.round(currentScroll / itemWidth);
+    if (!isNaN(nearestIndex) && state.nearestIndex != nearestIndex) {
         state.nearestIndex = nearestIndex;
         state.dotNetRef.invokeMethodAsync("NotifyNearestIndexChanged", nearestIndex)
     }
+}
+function visibilityChanged(element) {
+    const state = scrollers.get(element);
+    var was = state.visible;
+    state.visible = element.offsetParent !== null;
+    if (!was && state.visible)
+        snapToIndex(element, state.currentIndex, 'auto');
 }
 
 export function snapToNext(element) {
@@ -155,6 +179,7 @@ export function snapToIndex(element, index, scrollToBehavior = 'smooth') {
     const targetScroll = items[index].offsetLeft - scrollAtPositionZero;
     var oldIndex = state.currentIndex;
     state.currentIndex = index;
+    state.priorityScrollInProgress = true;
     element.scrollTo({
         left: targetScroll,
         behavior: scrollToBehavior
@@ -167,7 +192,7 @@ export function snapToIndex(element, index, scrollToBehavior = 'smooth') {
 function dispose(element) {
     const state = scrollers.get(element);
     if (state) {
-        state.observer.disconnect();
+        state.observers.forEach(o => o.disconnect());
         window.removeEventListener('resize', state.handleResize);
         console.log('handler removed');
         scrollers.delete(element);

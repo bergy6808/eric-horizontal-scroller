@@ -8,11 +8,11 @@ A big thank you to ChatGPT for helping creating this!
 <div class="parent-wrapper">
     <div style="@(AllowOverflow ? $"overflow-x: visible;margin-left:-{OverflowAllowedWidthOnLeft};" : "")">
         <div class="scroller-container" style="--item-spacing:@ItemSpacing;--carousel-slide-width:@_itemsFullWidth;--end-spacer-width:@EndSpacerWidth;width:@(AllowOverflow ? $"calc({OverflowViewportWidth} + {OverflowAllowedWidthOnLeft})" : "initial");padding-left:@(AllowOverflow? OverflowAllowedWidthOnLeft : "0");"
-             @onmousedown="OnMouseDown"
-             @onmouseup="OnMouseUp"
-             @onmouseleave="OnMouseUp"
-             @ontouchstart="OnTouchStart"
-             @ontouchend="OnTouchEnd"
+             @onmousedown="EventUtil.AsNonRenderingEventHandler<MouseEventArgs>(OnMouseDown)"
+             @onmouseup="EventUtil.AsNonRenderingEventHandler<MouseEventArgs>(OnMouseUp)"
+             @onmouseleave="EventUtil.AsNonRenderingEventHandler<MouseEventArgs>(OnMouseUp)"
+             @ontouchstart="EventUtil.AsNonRenderingEventHandler<TouchEventArgs>(OnTouchStart)"
+             @ontouchend="EventUtil.AsNonRenderingEventHandler<TouchEventArgs>(OnTouchEnd)"
              @ref="_scrollerRef">
             <div class="scroller-content" role="list">
                 @if (Items != null && ItemTemplate != null)
@@ -282,5 +282,19 @@ A big thank you to ChatGPT for helping creating this!
         _dotNetRef?.Dispose();
     }
 
+    private static class EventUtil
+    {
+        public static Func<TValue, Task> AsNonRenderingEventHandler<TValue>(
+            Func<TValue, Task> callback)
+            => new AsyncReceiver<TValue>(callback).Invoke;
 
+        private record AsyncReceiver<T>(Func<T, Task> callback) 
+            : ReceiverBase { public Task Invoke(T arg) => callback(arg); }
+
+        private record ReceiverBase : IHandleEvent
+        {
+            public Task HandleEventAsync(EventCallbackWorkItem item, object? arg) => 
+                item.InvokeAsync(arg);
+        }
+    }
 }

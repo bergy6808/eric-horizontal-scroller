@@ -4,54 +4,101 @@
 
 <PageTitle>Carousel</PageTitle>
 <div style="overflow-x: hidden;">
-<div class="container-lg">
-    <h1>Carousel example</h1>
+    <div class="container-md">
+        <h1>Carousel example</h1>
+        @* 
+        <p role="status">Current count: @currentCount</p>
 
-    <p role="status">Current count: @currentCount</p>
+        <button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+        <br />
 
-    <button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
-    <br />
-
-    <h2>A very standard carousel with buttons</h2>
-    <button class="btn btn-outlined-primary" @onclick="() => _scrollerWithButtons.SnapToPreviousAsync()">Prev</button>
-    <button class="btn btn-outlined-primary" @onclick="() => _scrollerWithButtons.SnapToNextAsync()">Next</button>
-    <button class="btn btn-outlined-primary" @onclick="() => _scrollerWithButtons.SnapToIndexAsync(2)">3rd</button>
-    <HorizontalScroller @ref="_scrollerWithButtons" Items="Enumerable.Range(0, currentCount)" CarouselMode="true">
-        <ItemTemplate>
-            <div class="card bg-primary">
-                <div class="card-body">
-                    Card #@context
+        <h2>A very standard carousel with buttons</h2>
+        <button class="btn btn-outlined-primary" @onclick="() => _scrollerWithButtons.SnapToPreviousAsync()">Prev</button>
+        <button class="btn btn-outlined-primary" @onclick="() => _scrollerWithButtons.SnapToNextAsync()">Next</button>
+        <button class="btn btn-outlined-primary" @onclick="() => _scrollerWithButtons.SnapToIndexAsync(2)">3rd</button>
+        <HorizontalScroller @ref="_scrollerWithButtons" Items="Enumerable.Range(0, currentCount)" CarouselMode="true">
+            <ItemTemplate>
+                <div class="card bg-primary">
+                    <div class="card-body">
+                        Card #@context
+                    </div>
                 </div>
-            </div>
-        </ItemTemplate>
-    </HorizontalScroller>
+            </ItemTemplate>
+        </HorizontalScroller>
 
-    <h2>A very standard carousel syncing position with counter</h2>
-    <HorizontalScroller Items="Enumerable.Range(0, 5)" CarouselMode="true" @bind-SelectedIndex="@currentCount">
-        <ItemTemplate>
-            <div class="card bg-primary">
-                <div class="card-body">
-                    Card #@context
+        <h2>A very standard carousel syncing position with counter</h2>
+        <HorizontalScroller Items="Enumerable.Range(0, 5)" CarouselMode="true" @bind-SelectedIndex="@currentCount">
+            <ItemTemplate>
+                <div class="card bg-primary">
+                    <div class="card-body">
+                        Card #@context
+                    </div>
                 </div>
-            </div>
-        </ItemTemplate>
-    </HorizontalScroller>
-
-    <h2>A carousel with responsive number of items</h2>
-    <HorizontalScroller Items="Enumerable.Range(0, currentCount)" CarouselMode="true" CarouselItemsPerSlideSelector="GetItemsPerSlide">
-        <ItemTemplate>
-            <div class="card bg-primary">
-                <div class="card-body">
-                    Card #@context
+            </ItemTemplate>
+        </HorizontalScroller>
+ *@
+@*         <h2>A carousel with responsive number of items</h2>
+        <HorizontalScroller Items="Enumerable.Range(0, currentCount)" CarouselMode="true" CarouselItemsPerSlideSelector="GetItemsPerSlide">
+            <ItemTemplate>
+                <div class="card bg-primary">
+                    <div class="card-body">
+                        Card #@context
+                    </div>
                 </div>
-            </div>
-        </ItemTemplate>
-    </HorizontalScroller>
+            </ItemTemplate>
+        </HorizontalScroller> *@
+        <h2>Carousel in a modal</h2>
+        <button type="button" class="btn btn-primary my-3" @onclick="ShowModal">
+            Launch demo modal
+        </button>
+    </div>
 </div>
+<!-- Modal -->
+<div class="modal fade @(showModal ? "show d-block" : "")" tabindex="-1" style="background:rgba(0,0,0,0.5);" role="dialog" aria-modal="true" aria-hidden="@(!showModal)">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Modal title</h5>
+                <button type="button" class="btn-close" aria-label="Close" @onclick="HideModal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Current slide index : @_indexInModal</p>
+                <HorizontalScroller @ref=_modalScroller Items="Enumerable.Range(0, currentCount)" CarouselMode="true"
+                                    CarouselItemsPerSlideSelector="GetItemsPerSlide" @bind-SelectedIndex="_indexInModal">
+                    <ItemTemplate>
+                        <div class="card bg-primary">
+                            <div class="card-body">
+                                Card #@context
+                                <button class="btn btn-outlined-primary" @onclick="() => _modalScroller.SnapToPreviousAsync()">Prev</button>
+                                <button class="btn btn-outlined-primary" @onclick="() => _modalScroller.SnapToNextAsync()">Next</button>
+                            </div>
+                        </div>
+                    </ItemTemplate>
+                </HorizontalScroller>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @onclick="HideModal">Close</button>
+            </div>
+        </div>
+    </div>
 </div>
+
 @code {
-    private int currentCount = 3;
-    private HorizontalScroller<int> _scrollerWithButtons;
+    private int currentCount = 6;
+    private HorizontalScroller<int> _scrollerWithButtons, _modalScroller;
+    private int _indexInModal = 1;
+
+    private bool showModal = false;
+
+    private void ShowModal()
+    {
+        showModal = true;
+    }
+
+    private void HideModal()
+    {
+        showModal = false;
+    }
 
     private void IncrementCount()
     {

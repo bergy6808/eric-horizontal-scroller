@@ -1,4 +1,4 @@
 ﻿namespace BlazorHorizontalScroller
 {
-    public record WidthInfo(double ParentWidth, double ViewportWidth);
+    public record WidthInfo(int ParentWidth, int ViewportWidth);
 }
