@@ -165,10 +165,12 @@ export function snapToNearest(element) {
     snapToIndex(element, state.nearestIndex);
 }
 
-export function snapToIndex(element, index, scrollToBehavior = 'smooth') {
+export function snapToIndex(element, index, scrollToBehavior = 'smooth', priority = true) {
     const state = scrollers.get(element);
     const items = Array.from(element.querySelectorAll('.scroller-item'));
     if (items.length == 0 || isNaN(index))
+        return;
+    if (!priority && state.priorityScrollInProgress)
         return;
 
     if (index < 0)

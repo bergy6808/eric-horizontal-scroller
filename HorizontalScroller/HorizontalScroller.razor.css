@@ -17,15 +17,8 @@
     white-space: normal;
 }
 
-.carousel-slide {
-    width: var(--carousel-slide-width);
-    display: flex;
-    gap: var(--item-spacing);
-}
-
-::deep .carousel-slide > * {
-    /*flex: 1 1 0;*/
-    width: calc((var(--carousel-slide-width) - ((var(--items-per-slide) - 1) * var(--item-spacing))) / var(--items-per-slide));
+::deep .item-using-width-per-slide {
+    width: calc((var(--container-width) - ((var(--items-per-slide) - 1) * var(--item-spacing))) / var(--items-per-slide));
 }
 
 .scroller-end-spacer {

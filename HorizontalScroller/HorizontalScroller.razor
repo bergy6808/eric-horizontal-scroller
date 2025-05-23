@@ -1,13 +1,28 @@
-﻿@*
-A big thank you to ChatGPT for helping creating this!
-*@
-
-@typeparam TItem
+﻿@typeparam TItem
 @using Microsoft.JSInterop
 @implements IAsyncDisposable
 <div class="parent-wrapper">
-    <div style="@(AllowOverflow ? $"overflow-x: visible;margin-left:-{OverflowAllowedWidthOnLeft};" : "")">
-        <div class="scroller-container" style="--item-spacing:@ItemSpacing;--carousel-slide-width:@_itemsFullWidth;--end-spacer-width:@EndSpacerWidth;width:@(AllowOverflow ? $"calc({OverflowViewportWidth} + {OverflowAllowedWidthOnLeft})" : "initial");padding-left:@(AllowOverflow? OverflowAllowedWidthOnLeft : "0");"
+    @if (_preRenderMode)
+    {
+        var itemCount = ItemsPerSlideSelector?.Invoke(_widthInfo) ?? 1;
+        <div style="display:flex;gap: @ItemSpacing;">
+            @foreach (var item in Items.Take(itemCount))
+            {
+                <div style="height: 100%;flex-grow: 1;">
+                    @ItemTemplate(item)
+                </div>
+            }
+            @if (itemCount > Items.Count())
+            {
+                @foreach (var _ in Enumerable.Range(0, itemCount - Items.Count()))
+                {
+                    <div style="height: 100%;flex-grow: 1;"></div>
+                }
+            }
+        </div>
+    }
+    <div style="@(AllowOverflow ? $"overflow-x: visible;margin-left:-{OverflowAllowedWidthOnLeft};" : "") @(_preRenderMode ? "visibility:hidden;position:absolute;left:0;right:0;top:0;" : "")">
+        <div class="scroller-container" style="--item-spacing:@ItemSpacing;--container-width:@_itemsFullWidth;--end-spacer-width:@EndSpacerWidth;width:@(AllowOverflow ? $"calc({OverflowViewportWidth} + {OverflowAllowedWidthOnLeft})" : "initial");padding-left:@(AllowOverflow? OverflowAllowedWidthOnLeft : "0");"
              @onmousedown="EventUtil.AsNonRenderingEventHandler<MouseEventArgs>(OnMouseDown)"
              @onmouseup="EventUtil.AsNonRenderingEventHandler<MouseEventArgs>(OnMouseUp)"
              @onmouseleave="EventUtil.AsNonRenderingEventHandler<MouseEventArgs>(OnMouseUp)"
@@ -17,18 +32,23 @@ A big thank you to ChatGPT for helping creating this!
             <div class="scroller-content" role="list">
                 @if (Items != null && ItemTemplate != null)
                 {
-                    var batchSize = CarouselMode ? CarouselItemsPerSlideSelector(_widthInfo) : 1;
-                    @foreach (var batch in Items.Chunk(batchSize <= 0 ? 1 : batchSize))
+                    var relativeWidthItemsCount = UseRelativeWidth() ? ItemsPerSlideSelector.Invoke(_widthInfo) : (int?)null;
+                    @foreach (var item in Items)
                     {
-                        <div class="scroller-item" style="--items-per-slide:@batchSize;">
-                            <div class="@(CarouselMode ? "carousel-slide" : "")" style="height: 100%;@(CarouselMode ? "" : $"width:{ItemWidth};") @(EnableDrag ? "user-select: none;" : "")">
-                                @foreach (var item in batch)
+                        <div class="scroller-item @(UseRelativeWidth() ? "item-using-width-per-slide" : "")" style="--items-per-slide:@(relativeWidthItemsCount ?? 1);">
+                            <div style="height: 100%;@(relativeWidthItemsCount != null ? "" : $"width:{ItemWidth};") @(EnableDrag ? "user-select: none;" : "")">
+                                @if (!_preRenderMode)
                                 {
                                     @ItemTemplate(item)
+                                }
+                                else
+                                {
+                                    <div></div>
                                 }
                             </div>
                         </div>
                     }
+
                     <div class="scroller-end-spacer"></div>
                 }
             </div>
@@ -43,7 +63,7 @@ A big thank you to ChatGPT for helping creating this!
     [Parameter, EditorRequired] public IEnumerable<TItem>? Items { get; set; }
 
     /// <summary>
-    /// Content template for each item. Use @context to access the item. If not using CarouselMode, you should fix the width of the items yourself.
+    /// Content template for each item. Use @context to access the item.
     /// </summary>
     [Parameter, EditorRequired] public RenderFragment<TItem>? ItemTemplate { get; set; }
     /// <summary>
@@ -57,7 +77,7 @@ A big thank you to ChatGPT for helping creating this!
     [Parameter] public string ItemSpacing { get; set; } = "1rem";
 
     /// <summary>
-    /// When carousel mode is off, sets the width of items. Consider 75vw for mobile
+    /// Sets the width of items. Has priority over ItemsPerSlideSelector. Consider 75vw for mobile.
     /// </summary>
     [Parameter] public string ItemWidth { get; set; } = "auto";
 
@@ -104,15 +124,15 @@ A big thank you to ChatGPT for helping creating this!
     /// <summary>
     /// Carousel mode enables items to take the full width of the available space (or share equally whit others using CarouselItemsPerSlideSelector)
     /// </summary>
-    [Parameter] public bool CarouselMode { get; set; }
+    [Parameter, Obsolete("Use ItemsPerSlideSelector and don't specify ItemWidth", true)] public bool CarouselMode { get; set; }
 
     /// <summary>
-    /// If component is in CarouselMode, each carousel slide will have this number of items. You can choose from either parent size of viewport size, but watch out: WidthInfo is null on first render
+    /// If ItemWidth is "auto", and if not null, width of item will be decided by this
     /// </summary>
-    [Parameter] public Func<WidthInfo?, int> CarouselItemsPerSlideSelector { get; set; } = _ => 1;
+    [Parameter] public Func<WidthInfo?, int>? ItemsPerSlideSelector { get; set; }
 
     /// <summary>
-    /// Sets the selected slide index. 
+    /// Sets the selected slide index.
     /// </summary>
     [Parameter] public int SelectedIndex { get; set; }
     /// <summary>
@@ -134,12 +154,18 @@ A big thank you to ChatGPT for helping creating this!
     private WidthInfo? _widthInfo;
     private int _selectedIndex;
     private bool _isDragging;
+    private bool _preRenderMode;
+
+    protected override void OnInitialized()
+    {
+        _preRenderMode = UseRelativeWidth() && Items != null && ItemTemplate != null;
+    }
 
     protected override async Task OnParametersSetAsync()
     {
         if (_scrollerModule != null && _selectedIndex != SelectedIndex && !_isDragging)
         {
-            await SnapToIndexAsync(SelectedIndex);
+            await SnapToIndexAsync(SelectedIndex, false);
         }
     }
 
@@ -167,11 +193,12 @@ A big thank you to ChatGPT for helping creating this!
             }
         }
         await SyncWidth();
+        _preRenderMode = false;
     }
 
     private async Task SyncWidth()
     {
-        if (_scrollerModule != null && CarouselMode)
+        if (_scrollerModule != null && (UseRelativeWidth()))
             _widthInfo = await _scrollerModule.InvokeAsync<WidthInfo>("getSizeInfo", _scrollerRef);
         FullWidthChanged();
     }
@@ -222,12 +249,12 @@ A big thank you to ChatGPT for helping creating this!
         if (_scrollerModule != null)
             await _scrollerModule.InvokeVoidAsync("snapToPrevious", _scrollerRef);
     }
-    public async Task SnapToIndexAsync(int index)
+    public async Task SnapToIndexAsync(int index, bool priority = true)
     {
         if (_scrollerModule != null)
         {
-            _selectedIndex = index;
-            await _scrollerModule.InvokeVoidAsync("snapToIndex", _scrollerRef, index);
+            //_selectedIndex = index;
+            await _scrollerModule.InvokeVoidAsync("snapToIndex", _scrollerRef, index, "smooth", priority);
         }
     }
     [JSInvokable]
@@ -288,13 +315,17 @@ A big thank you to ChatGPT for helping creating this!
             Func<TValue, Task> callback)
             => new AsyncReceiver<TValue>(callback).Invoke;
 
-        private record AsyncReceiver<T>(Func<T, Task> callback) 
-            : ReceiverBase { public Task Invoke(T arg) => callback(arg); }
+        private record AsyncReceiver<T>(Func<T, Task> callback)
+            : ReceiverBase
+        { public Task Invoke(T arg) => callback(arg); }
 
         private record ReceiverBase : IHandleEvent
         {
-            public Task HandleEventAsync(EventCallbackWorkItem item, object? arg) => 
+            public Task HandleEventAsync(EventCallbackWorkItem item, object? arg) =>
                 item.InvokeAsync(arg);
         }
     }
+
+    private bool UseRelativeWidth() => ItemWidth == "auto" && ItemsPerSlideSelector != null;
+
 }

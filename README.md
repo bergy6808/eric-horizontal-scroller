@@ -13,7 +13,7 @@ This nuget is subject to big changes, use with precaution.
 ## ✨ Features
 
 - No external dependencies
-- Carousel mode with responsive slides-per-view control
+- Optional Items-per-view control, to have a carousel
 - Customizable overflow behavior
 - Optional inertia and decay-based drag scrolling
 - Snap-to-item enabled by default with configurable delay
@@ -79,25 +79,27 @@ When using AllowOverflow=true, you should style some ancestor with `overflow-x: 
 
 ## 📐 Parameters
 
-| Parameter                       | Type                    | Default      | Description                                       |
-| :------------------------------ | :---------------------- | :----------- | :------------------------------------------------ |
-| `Items`                         | `IEnumerable<TItem>`    | **Required** | Collection of items to render                     |
-| `ItemTemplate`                  | `RenderFragment<TItem>` | **Required** | Template for each item                            |
-| `ItemSpacing`                   | `string`                | `"1rem"`     | Spacing between items                             |
-| `AllowOverflow`                 | `bool`                  | `false`      | Allow horizontal overflow                         |
-| `OverflowViewportWidth`         | `string`                | `"100%"`     | Width of the viewport when overflow is enabled    |
-| `OverflowAllowedWidthOnLeft`    | `string`                | `"10rem"`    | Width of allowed overflow on the left             |
-| `EndSpacerWidth`                | `string`                | `"300px"`    | Space after the last item                         |
-| `EnableInertia`                 | `bool`                  | `true`       | Enable inertia scrolling                          |
-| `InertiaDecay`                  | `double`                | `0.9`        | Decay rate of inertia                             |
-| `EnableDrag`                    | `bool`                  | `true`       | Enable drag interactions                          |
-| `EnableSnapping`                | `bool`                  | `true`       | Snap to the nearest item after drag               |
-| `SnapDelay`                     | `int`                   | `100`        | Delay before snapping (ms)                        |
-| `CarouselMode`                  | `bool`                  | `false`      | Enable carousel-like behavior                     |
-| `CarouselItemsPerSlideSelector` | `Func<WidthInfo?, int>` | `_ => 1`     | Number of items per slide based on viewport width |
-| `OnSnappedToIndex`              | `EventCallback<int>`    | —            | Invoked when snapped to an item                   |
-| `SelectedIndex`                 | `int`                   | `0`          | Sets the selected slide index                     |
-| `SelectedIndexChanged`          | `EventCallback<int>`    | —            | Callback invoked when selected index changes      |
+| Parameter                    | Type                     | Default      | Description                                                               |
+| :--------------------------- | :----------------------- | :----------- | :------------------------------------------------------------------------ |
+| `Items`                      | `IEnumerable<TItem>`     | **Required** | Collection of items to render                                             |
+| `ItemTemplate`               | `RenderFragment<TItem>`  | **Required** | Template for each item (use `@context` to access item)                    |
+| `AllowOverflow`              | `bool`                   | `false`      | Allows horizontal overflow (requires outer `overflow-x: hidden`)          |
+| `ItemSpacing`                | `string`                 | `"1rem"`     | Spacing between items                                                     |
+| `ItemWidth`                  | `string`                 | `"auto"`     | Width of each item (overrides `ItemsPerSlideSelector` if set)             |
+| `OverflowViewportWidth`      | `string`                 | `"100%"`     | Width of viewport container when `AllowOverflow` is enabled               |
+| `OverflowAllowedWidthOnLeft` | `string`                 | `"10rem"`    | Allowed overflow width on the left                                        |
+| `EndSpacerWidth`             | `string`                 | `"300px"`    | Space after the last item                                                 |
+| `EnableInertia`              | `bool`                   | `true`       | Enables inertia scrolling on drag                                         |
+| `InertiaDecay`               | `double`                 | `0.9`        | Decay rate of inertia speed (1.0 = infinite scroll)                       |
+| `EnableDrag`                 | `bool`                   | `true`       | Enables drag-to-scroll with mouse/touch                                   |
+| `EnableSnapping`             | `bool`                   | `true`       | Enables snap-to-item behavior after drag                                  |
+| `SnapDelay`                  | `int`                    | `100`        | Delay before snapping (ms) after drag                                     |
+| `CarouselMode`               | `bool` *(Obsolete)*      | —            | **Deprecated:** use `ItemsPerSlideSelector` and don't specify `ItemWidth` |
+| `ItemsPerSlideSelector`      | `Func<WidthInfo?, int>?` | `null`       | If `ItemWidth` is `"auto"`, defines items per slide based on width info   |
+| `SelectedIndex`              | `int`                    | `0`          | Sets the currently selected slide index                                   |
+| `SelectedIndexChanged`       | `EventCallback<int>`     | —            | Callbac                                                                   |
+
+
 
 ---
 
@@ -117,7 +119,7 @@ When using AllowOverflow=true, you should style some ancestor with `overflow-x: 
 public record WidthInfo(double ParentWidth, double ViewportWidth);
 ```
 
-Useful for responsive calculations in your `CarouselItemsPerSlideSelector` delegate.
+Useful for responsive calculations in your `CarouselItemsPerSlideSelector` delegate. If null, it means it's the first render.
 
 ---
 

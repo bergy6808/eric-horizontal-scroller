@@ -6,7 +6,7 @@
 <div style="overflow-x: hidden;">
     <div class="container-md">
         <h1>Carousel example</h1>
-        @* 
+        
         <p role="status">Current count: @currentCount</p>
 
         <button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
@@ -16,7 +16,7 @@
         <button class="btn btn-outlined-primary" @onclick="() => _scrollerWithButtons.SnapToPreviousAsync()">Prev</button>
         <button class="btn btn-outlined-primary" @onclick="() => _scrollerWithButtons.SnapToNextAsync()">Next</button>
         <button class="btn btn-outlined-primary" @onclick="() => _scrollerWithButtons.SnapToIndexAsync(2)">3rd</button>
-        <HorizontalScroller @ref="_scrollerWithButtons" Items="Enumerable.Range(0, currentCount)" CarouselMode="true">
+        <HorizontalScroller @ref="_scrollerWithButtons" Items="Enumerable.Range(0, currentCount)" ItemsPerSlideSelector="_ => 1">
             <ItemTemplate>
                 <div class="card bg-primary">
                     <div class="card-body">
@@ -27,7 +27,7 @@
         </HorizontalScroller>
 
         <h2>A very standard carousel syncing position with counter</h2>
-        <HorizontalScroller Items="Enumerable.Range(0, 5)" CarouselMode="true" @bind-SelectedIndex="@currentCount">
+        <HorizontalScroller Items="Enumerable.Range(0, 5)" ItemsPerSlideSelector="_ => 1" @bind-SelectedIndex="@currentCount">
             <ItemTemplate>
                 <div class="card bg-primary">
                     <div class="card-body">
@@ -36,9 +36,25 @@
                 </div>
             </ItemTemplate>
         </HorizontalScroller>
- *@
-@*         <h2>A carousel with responsive number of items</h2>
-        <HorizontalScroller Items="Enumerable.Range(0, currentCount)" CarouselMode="true" CarouselItemsPerSlideSelector="GetItemsPerSlide">
+
+        <h2>A carousel with always two spots with différent content</h2>
+        <HorizontalScroller Items="Enumerable.Range(0, currentCount)" ItemsPerSlideSelector="_ => 2">
+            <ItemTemplate>
+                <div class="card bg-primary">
+                    <div class="card-body">
+                        @foreach (var c in Enumerable.Range(0, context+2))
+                        {
+                            <p>
+                                Line #@c
+                                </p>
+                        }
+                    </div>
+                </div>
+            </ItemTemplate>
+        </HorizontalScroller>
+
+        <h2>A carousel with responsive number of items</h2>
+        <HorizontalScroller Items="Enumerable.Range(0, currentCount)" ItemsPerSlideSelector="GetItemsPerSlide">
             <ItemTemplate>
                 <div class="card bg-primary">
                     <div class="card-body">
@@ -46,7 +62,7 @@
                     </div>
                 </div>
             </ItemTemplate>
-        </HorizontalScroller> *@
+        </HorizontalScroller>
         <h2>Carousel in a modal</h2>
         <button type="button" class="btn btn-primary my-3" @onclick="ShowModal">
             Launch demo modal
@@ -63,8 +79,8 @@
             </div>
             <div class="modal-body">
                 <p>Current slide index : @_indexInModal</p>
-                <HorizontalScroller @ref=_modalScroller Items="Enumerable.Range(0, currentCount)" CarouselMode="true"
-                                    CarouselItemsPerSlideSelector="GetItemsPerSlide" @bind-SelectedIndex="_indexInModal">
+                <HorizontalScroller @ref=_modalScroller Items="Enumerable.Range(0, currentCount)"
+                                    ItemsPerSlideSelector="GetItemsPerSlide" @bind-SelectedIndex="_indexInModal">
                     <ItemTemplate>
                         <div class="card bg-primary">
                             <div class="card-body">
