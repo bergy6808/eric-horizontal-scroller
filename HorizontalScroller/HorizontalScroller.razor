@@ -2,9 +2,9 @@
 @using Microsoft.JSInterop
 @implements IAsyncDisposable
 <div class="parent-wrapper">
-    @if (_preRenderMode)
+    @if (_preRenderMode && ItemTemplate != null && Items != null)
     {
-        var itemCount = ItemsPerSlideSelector?.Invoke(_widthInfo) ?? 1;
+        var itemCount = GetItemsPerSlide();
         <div style="display:flex;gap: @ItemSpacing;">
             @foreach (var item in Items.Take(itemCount))
             {
@@ -32,7 +32,7 @@
             <div class="scroller-content" role="list">
                 @if (Items != null && ItemTemplate != null)
                 {
-                    var relativeWidthItemsCount = UseRelativeWidth() ? ItemsPerSlideSelector.Invoke(_widthInfo) : (int?)null;
+                    var relativeWidthItemsCount = UseRelativeWidth() ? GetItemsPerSlide() : (int?)null;
                     @foreach (var item in Items)
                     {
                         <div class="scroller-item @(UseRelativeWidth() ? "item-using-width-per-slide" : "")" style="--items-per-slide:@(relativeWidthItemsCount ?? 1);">
@@ -238,18 +238,60 @@
             _isDragging = false;
         }
     }
-    public async Task SnapToNextAsync()
+    /// <summary>
+    /// Goes to the next item
+    /// </summary>
+    public async Task SnapToNextItem()
     {
         if (_scrollerModule != null)
             await _scrollerModule.InvokeVoidAsync("snapToNext", _scrollerRef);
     }
+    /// <summary>
+    /// Goes to the next slide. Will be different if ItemsPerSlideSelector returns something > 1.
+    /// </summary>
+    public async Task SnapToNextSlide()
+    {
+        var increment = GetItemsPerSlide();
+        await SnapToIndexAsync(_selectedIndex + increment);
+    }
 
-    public async Task SnapToPreviousAsync()
+    /// <summary>
+    /// Goes to the previous item
+    /// </summary>
+    public async Task SnapToPreviousItem()
     {
         if (_scrollerModule != null)
             await _scrollerModule.InvokeVoidAsync("snapToPrevious", _scrollerRef);
     }
-    public async Task SnapToIndexAsync(int index, bool priority = true)
+    /// <summary>
+    /// Goes to the previous slide. Will be different if ItemsPerSlideSelector returns something > 1.
+    /// </summary>
+    public async Task SnapToPreviousSlide()
+    {
+        var increment = - GetItemsPerSlide();
+        await SnapToIndexAsync(_selectedIndex + increment);
+    }
+    /// <summary>
+    /// Goes to a specific item index 
+    /// </summary>
+    /// <param name="index"></param>
+    /// <returns></returns>
+    public async Task SnapToItemIndex(int index)
+    {
+        await SnapToIndexAsync(index);
+    }
+    /// <summary>
+    /// Goes to a specific slide index. Will be different if ItemsPerSlideSelector returns something > 1.
+    /// </summary>
+    /// <param name="index"></param>
+    /// <returns></returns>
+    public async Task SnapToSlideIndex(int index)
+    {
+        var itemIndex = GetItemsPerSlide() * index;
+        await SnapToIndexAsync(itemIndex);
+    }
+
+    private async Task SnapToIndexAsync(int index, bool priority = true)
     {
         if (_scrollerModule != null)
         {
@@ -257,6 +299,12 @@
             await _scrollerModule.InvokeVoidAsync("snapToIndex", _scrollerRef, index, "smooth", priority);
         }
     }
+
+
+    private int GetItemsPerSlide() => UseRelativeWidth() ? (ItemsPerSlideSelector?.Invoke(_widthInfo) ?? 1) : 1;
+
+    private bool UseRelativeWidth() => ItemWidth == "auto" && ItemsPerSlideSelector != null;
+
     [JSInvokable]
     public async Task NotifySnapToIndex(int index)
     {
@@ -315,9 +363,9 @@
             Func<TValue, Task> callback)
             => new AsyncReceiver<TValue>(callback).Invoke;
 
-        private record AsyncReceiver<T>(Func<T, Task> callback)
+        private record AsyncReceiver<T>(Func<T, Task> Callback)
             : ReceiverBase
-        { public Task Invoke(T arg) => callback(arg); }
+        { public Task Invoke(T arg) => Callback(arg); }
 
         private record ReceiverBase : IHandleEvent
         {
@@ -325,7 +373,5 @@
                 item.InvokeAsync(arg);
         }
     }
-
-    private bool UseRelativeWidth() => ItemWidth == "auto" && ItemsPerSlideSelector != null;
 
 }

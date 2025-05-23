@@ -105,11 +105,15 @@ When using AllowOverflow=true, you should style some ancestor with `overflow-x: 
 
 ## 📱 Methods
 
-| Method               | Description |
-|:--------------------|:-------------|
-| `SnapToNextAsync()`   | Programmatically snap to the next item |
-| `SnapToPreviousAsync()` | Programmatically snap to the previous item |
-| `SnapToIndexAsync()` | Programmatically snap to the selected slide index (not item index) |
+| Method                             | Return Type | Description                                                                                   |
+| :--------------------------------- | :---------- | :-------------------------------------------------------------------------------------------- |
+| `Task SnapToNextItem()`            | `Task`      | Scrolls to the next item.                                                                     |
+| `Task SnapToNextSlide()`           | `Task`      | Scrolls to the next slide (number of items per slide depends on `ItemsPerSlideSelector`).     |
+| `Task SnapToPreviousItem()`        | `Task`      | Scrolls to the previous item.                                                                 |
+| `Task SnapToPreviousSlide()`       | `Task`      | Scrolls to the previous slide (number of items per slide depends on `ItemsPerSlideSelector`). |
+| `Task SnapToItemIndex(int index)`  | `Task`      | Scrolls to a specific item by its index.                                                      |
+| `Task SnapToSlideIndex(int index)` | `Task`      | Scrolls to a specific slide by its index (calculated by `ItemsPerSlideSelector`).             |
+
 
 ---
 

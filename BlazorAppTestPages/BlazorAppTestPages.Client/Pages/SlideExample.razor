@@ -59,8 +59,8 @@
             </ItemTemplate>
         </HorizontalScroller>
         <h2>Sliding with buttons</h2>
-        <button class="btn btn-outlined-primary" @onclick="() => _scrollerWithButtons.SnapToPreviousAsync()">Prev</button>
-        <button class="btn btn-outlined-primary" @onclick="() => _scrollerWithButtons.SnapToNextAsync()">Next</button>
+        <button class="btn btn-outlined-primary" @onclick="() => _scrollerWithButtons.SnapToPreviousItem()">Prev</button>
+        <button class="btn btn-outlined-primary" @onclick="() => _scrollerWithButtons.SnapToNextItem()">Next</button>
         <button class="btn btn-outlined-primary" @onclick="() => _scrollerWithButtons.SnapToIndexAsync(2)">3rd</button>
         <HorizontalScroller @ref="_scrollerWithButtons" Items="Enumerable.Range(0, currentCount)">
             <ItemTemplate>

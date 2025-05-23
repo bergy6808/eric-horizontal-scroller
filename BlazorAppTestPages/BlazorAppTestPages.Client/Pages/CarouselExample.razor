@@ -13,8 +13,8 @@
         <br />
 
         <h2>A very standard carousel with buttons</h2>
-        <button class="btn btn-outlined-primary" @onclick="() => _scrollerWithButtons.SnapToPreviousAsync()">Prev</button>
-        <button class="btn btn-outlined-primary" @onclick="() => _scrollerWithButtons.SnapToNextAsync()">Next</button>
+        <button class="btn btn-outlined-primary" @onclick="() => _scrollerWithButtons.SnapToPreviousItem()">Prev</button>
+        <button class="btn btn-outlined-primary" @onclick="() => _scrollerWithButtons.SnapToNextItem()">Next</button>
         <button class="btn btn-outlined-primary" @onclick="() => _scrollerWithButtons.SnapToIndexAsync(2)">3rd</button>
         <HorizontalScroller @ref="_scrollerWithButtons" Items="Enumerable.Range(0, currentCount)" ItemsPerSlideSelector="_ => 1">
             <ItemTemplate>
@@ -85,8 +85,10 @@
                         <div class="card bg-primary">
                             <div class="card-body">
                                 Card #@context
-                                <button class="btn btn-outlined-primary" @onclick="() => _modalScroller.SnapToPreviousAsync()">Prev</button>
-                                <button class="btn btn-outlined-primary" @onclick="() => _modalScroller.SnapToNextAsync()">Next</button>
+                                <button class="btn btn-outlined-primary" @onclick="() => _modalScroller.SnapToPreviousItem()">Prev</button>
+                                <button class="btn btn-outlined-primary" @onclick="() => _modalScroller.SnapToNextItem()">Next</button>
+                                <button class="btn btn-outlined-primary" @onclick="() => _modalScroller.SnapToPreviousSlide()">Prev slide</button>
+                                <button class="btn btn-outlined-primary" @onclick="() => _modalScroller.SnapToNextSlide()">Next slide</button>
                             </div>
                         </div>
                     </ItemTemplate>
