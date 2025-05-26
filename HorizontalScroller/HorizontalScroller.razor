@@ -6,7 +6,7 @@
     {
         var itemCount = GetItemsPerSlide();
         <div style="display:flex;gap: @ItemSpacing;">
-            @foreach (var item in Items.Take(itemCount))
+            @foreach (var item in Items.Skip(SelectedIndex).Take(itemCount))
             {
                 <div style="height: 100%;flex-grow: 1;">
                     @ItemTemplate(item)
@@ -97,11 +97,6 @@
     [Parameter] public string EndSpacerWidth { get; set; } = "300px";
 
     /// <summary>
-    /// If true, the scroller will have inertia when dragging. Speed will decay at a rate of InertiaDecay.
-    /// </summary>
-    [Parameter] public bool EnableInertia { get; set; } = true;
-
-    /// <summary>
     /// Decay rate of the inertia. 1.0 means no decay (it will scroll by itself forever), 0.0 means instant stop.
     /// </summary>
     [Parameter] public double InertiaDecay { get; set; } = 0.9;
@@ -115,11 +110,6 @@
     /// When drag is released and reached a minimum speed, the scroller will snap to the closest item (if true). Otherwise, it will just stop where it is.
     /// </summary>
     [Parameter] public bool EnableSnapping { get; set; } = true;
-
-    /// <summary>
-    /// Delays between reaching minimum speed (after dragging) and snapping to the closest item.
-    /// </summary>
-    [Parameter] public int SnapDelay { get; set; } = 100;
 
     /// <summary>
     /// Carousel mode enables items to take the full width of the available space (or share equally whit others using CarouselItemsPerSlideSelector)
@@ -153,6 +143,7 @@
     private string _itemsFullWidth = "75vw";
     private WidthInfo? _widthInfo;
     private int _selectedIndex;
+    private int? _goToIndexAfterRender;
     private bool _isDragging;
     private bool _preRenderMode;
 
@@ -185,15 +176,32 @@
                 await _scrollerModule.InvokeVoidAsync("initScroller", _scrollerRef, _dotNetRef, new
                 {
                     startIndex = SelectedIndex,
-                    snapDelay = SnapDelay,
-                    inertiaDecay = (!EnableInertia ? 0.0 : InertiaDecay),
+                    inertiaDecay = (InertiaDecay),
                     enableSnapping = EnableSnapping,
                     enableDrag = EnableDrag
                 });
             }
         }
+        if (_goToIndexAfterRender.HasValue)
+        {
+            await SnapToIndexAsync(_goToIndexAfterRender.Value, true, "auto");
+            _goToIndexAfterRender = null;
+        }
+
+
         await SyncWidth();
+        LeavePrerenderMode();
+    }
+
+    private void LeavePrerenderMode()
+    {
+        if (!_preRenderMode)
+            return;
+        if (_widthInfo != null && _preRenderMode && SelectedIndex != 0)
+            _goToIndexAfterRender = SelectedIndex;
+
         _preRenderMode = false;
+        StateHasChanged();
     }
 
     private async Task SyncWidth()
@@ -268,11 +276,11 @@
     /// </summary>
     public async Task SnapToPreviousSlide()
     {
-        var increment = - GetItemsPerSlide();
+        var increment = -GetItemsPerSlide();
         await SnapToIndexAsync(_selectedIndex + increment);
     }
     /// <summary>
-    /// Goes to a specific item index 
+    /// Goes to a specific item index
     /// </summary>
     /// <param name="index"></param>
     /// <returns></returns>
@@ -291,12 +299,12 @@
         await SnapToIndexAsync(itemIndex);
     }
 
-    private async Task SnapToIndexAsync(int index, bool priority = true)
+    private async Task SnapToIndexAsync(int index, bool priority = true, string speed = "smooth")
     {
         if (_scrollerModule != null)
         {
             //_selectedIndex = index;
-            await _scrollerModule.InvokeVoidAsync("snapToIndex", _scrollerRef, index, "smooth", priority);
+            await _scrollerModule.InvokeVoidAsync("snapToIndex", _scrollerRef, index, speed, priority);
         }
     }
 

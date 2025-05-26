@@ -63,6 +63,22 @@
                 </div>
             </ItemTemplate>
         </HorizontalScroller>
+        <h2>Start on item</h2>
+        <button type="button" class="btn btn-primary my-3" @onclick="() => _showSpecialCarousel = true">
+            Start carousel on item 1
+        </button>
+        @if (_showSpecialCarousel)
+        {
+            <HorizontalScroller @ref="_scrollerWithButtons" Items="Enumerable.Range(0, currentCount)" ItemsPerSlideSelector="_ => 1" @bind-SelectedIndex="_specialCarouselIndex">
+                <ItemTemplate>
+                    <div class="card bg-primary">
+                        <div class="card-body">
+                            Card #@context
+                        </div>
+                    </div>
+                </ItemTemplate>
+            </HorizontalScroller>
+        }
         <h2>Carousel in a modal</h2>
         <button type="button" class="btn btn-primary my-3" @onclick="ShowModal">
             Launch demo modal
@@ -107,6 +123,8 @@
     private int _indexInModal = 1;
 
     private bool showModal = false;
+    private bool _showSpecialCarousel;
+    private int _specialCarouselIndex = 1;
 
     private void ShowModal()
     {

@@ -121,7 +121,7 @@ function scheduleSnap(element) {
             return;
         updateNearest(element);
         snapToNearest(element);
-    }, state.opts.snapDelay);
+    }, 100);
 }
 function updateNearest(element) {
     const item = element.querySelector('.scroller-item');
