@@ -69,7 +69,7 @@
         </button>
         @if (_showSpecialCarousel)
         {
-            <HorizontalScroller @ref="_scrollerWithButtons" Items="Enumerable.Range(0, currentCount)" ItemsPerSlideSelector="_ => 1" @bind-SelectedIndex="_specialCarouselIndex">
+            <HorizontalScroller @ref="_scrollerWithButtons" Items="Enumerable.Range(0, 10)" ItemsPerSlideSelector="_ => 1" @bind-SelectedIndex="_specialCarouselIndex">
                 <ItemTemplate>
                     <div class="card bg-primary">
                         <div class="card-body">
@@ -124,7 +124,7 @@
 
     private bool showModal = false;
     private bool _showSpecialCarousel;
-    private int _specialCarouselIndex = 1;
+    private int _specialCarouselIndex = 7;
 
     private void ShowModal()
     {

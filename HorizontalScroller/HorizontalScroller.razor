@@ -136,6 +136,7 @@
 
     [Inject] private IJSRuntime Js { get; set; } = null!;
 
+    private bool AllowCallbacks => _goToIndexAfterRender == null && _scrollerModule != null && !_preRenderMode;
 
     private ElementReference? _scrollerRef;
     private IJSObjectReference? _scrollerModule;
@@ -317,16 +318,20 @@
     public async Task NotifySnapToIndex(int index)
     {
         await NotifyNearestIndexChanged(index);
-        await OnSnapped.InvokeAsync(index);
+        if (AllowCallbacks)
+            await OnSnapped.InvokeAsync(index);
     }
     [JSInvokable]
     public async Task NotifyNearestIndexChanged(int index)
     {
-        if (SelectedIndex != index)
+        if (_selectedIndex != index)
         {
-            SelectedIndex = index;
             _selectedIndex = index;
-            await SelectedIndexChanged.InvokeAsync(index);
+            if (AllowCallbacks)
+            {
+                SelectedIndex = index;
+                await SelectedIndexChanged.InvokeAsync(index);
+            }
         }
     }
     [JSInvokable]

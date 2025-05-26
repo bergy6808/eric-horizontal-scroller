@@ -131,7 +131,7 @@ function updateNearest(element) {
     const currentScroll = element.scrollLeft;
     const state = scrollers.get(element);
     const nearestIndex = Math.round(currentScroll / itemWidth);
-    if (!isNaN(nearestIndex) && state.nearestIndex != nearestIndex) {
+    if (state && !isNaN(nearestIndex) && state.nearestIndex != nearestIndex) {
         state.nearestIndex = nearestIndex;
         state.dotNetRef.invokeMethodAsync("NotifyNearestIndexChanged", nearestIndex)
     }
