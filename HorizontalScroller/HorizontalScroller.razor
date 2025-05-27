@@ -147,6 +147,7 @@
     private int? _goToIndexAfterRender;
     private bool _isDragging;
     private bool _preRenderMode;
+    private bool _initialized;
 
     protected override void OnInitialized()
     {
@@ -155,8 +156,9 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        if (_scrollerModule != null && _selectedIndex != SelectedIndex && !_isDragging)
+        if (_scrollerModule != null && _selectedIndex != SelectedIndex && !_isDragging && _initialized)
         {
+            Console.WriteLine($"Scrolling to index by parameter : {SelectedIndex}");
             await SnapToIndexAsync(SelectedIndex, false);
         }
     }
@@ -181,11 +183,14 @@
                     enableSnapping = EnableSnapping,
                     enableDrag = EnableDrag
                 });
+                _initialized = true;
             }
         }
         if (_goToIndexAfterRender.HasValue)
         {
+            Console.WriteLine($"Scrolling to init position after prerender : {_goToIndexAfterRender}");
             await SnapToIndexAsync(_goToIndexAfterRender.Value, true, "auto");
+            Console.WriteLine($"Scrolled to init position after prerender : {_goToIndexAfterRender}");
             _goToIndexAfterRender = null;
         }
 
@@ -327,6 +332,7 @@
         if (_selectedIndex != index)
         {
             _selectedIndex = index;
+            Console.WriteLine($"_selectedIndex changed : {_selectedIndex}");
             if (AllowCallbacks)
             {
                 SelectedIndex = index;
@@ -351,6 +357,7 @@
             {
                 _itemsFullWidth = expectedValue;
                 StateHasChanged();
+                Console.WriteLine($"Width changed : {_itemsFullWidth}");
             }
         }
     }

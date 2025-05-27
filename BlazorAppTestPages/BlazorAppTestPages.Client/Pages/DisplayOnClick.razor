@@ -1,0 +1,34 @@
+﻿@page "/display-on-click"
+@rendermode InteractiveWebAssembly
+@using BlazorHorizontalScroller
+
+<PageTitle>Carousel</PageTitle>
+<div style="overflow-x: hidden;">
+    <div class="container-md">
+        <h1>Display on click</h1>
+        <button type="button" class="btn btn-primary my-3" @onclick="() => _showSpecialCarousel = true">
+            Start carousel on item 7
+        </button>
+        @if (_showSpecialCarousel)
+        {
+            <HorizontalScroller Items="Enumerable.Range(0, 10)" ItemsPerSlideSelector="_ => 1" @bind-SelectedIndex="_specialCarouselIndex">
+                <ItemTemplate>
+                    <div class="card bg-primary">
+                        <div class="card-body">
+                            Card #@context
+                        </div>
+                    </div>
+                </ItemTemplate>
+            </HorizontalScroller>
+        }
+    </div>
+</div>
+
+@code {
+    private HorizontalScroller<int> _modalScroller;
+    private int _indexInModal = 1;
+
+    private bool showModal = false;
+    private bool _showSpecialCarousel;
+    private int _specialCarouselIndex = 7;
+}

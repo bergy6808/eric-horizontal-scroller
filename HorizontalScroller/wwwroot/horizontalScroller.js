@@ -53,8 +53,10 @@ export function initScroller(element, dotNetRef, options) {
         nearestIndex: 0,
         opts: options
     });
-    if (options.startIndex != 0)
+    if (options.startIndex != 0) {
+        console.log("Scrolling to start index: " + options.startIndex)
         snapToIndex(element, options.startIndex, 'auto');
+    }
 }
 
 export function getSizeInfo(element) {
@@ -182,6 +184,7 @@ export function snapToIndex(element, index, scrollToBehavior = 'smooth', priorit
     var oldIndex = state.currentIndex;
     state.currentIndex = index;
     state.priorityScrollInProgress = true;
+    console.log('Snapping to index ' + index +', at ' + targetScroll)
     element.scrollTo({
         left: targetScroll,
         behavior: scrollToBehavior
