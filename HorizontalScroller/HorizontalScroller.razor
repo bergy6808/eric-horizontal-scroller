@@ -142,12 +142,14 @@
     private IJSObjectReference? _scrollerModule;
     private DotNetObjectReference<HorizontalScroller<TItem>>? _dotNetRef;
     private string _itemsFullWidth = "75vw";
+    private bool _needResnapAfterResize;
     private WidthInfo? _widthInfo;
     private int _selectedIndex;
     private int? _goToIndexAfterRender;
     private bool _isDragging;
     private bool _preRenderMode;
     private bool _initialized;
+    private const bool LogStuff = true;
 
     protected override void OnInitialized()
     {
@@ -158,7 +160,7 @@
     {
         if (_scrollerModule != null && _selectedIndex != SelectedIndex && !_isDragging && _initialized)
         {
-            Console.WriteLine($"Scrolling to index by parameter : {SelectedIndex}");
+            LogMessage($"Scrolling to index by parameter : {SelectedIndex}");
             await SnapToIndexAsync(SelectedIndex, false);
         }
     }
@@ -181,20 +183,27 @@
                     startIndex = SelectedIndex,
                     inertiaDecay = (InertiaDecay),
                     enableSnapping = EnableSnapping,
-                    enableDrag = EnableDrag
+                    enableDrag = EnableDrag,
+                    log = LogStuff
                 });
                 _initialized = true;
             }
         }
         if (_goToIndexAfterRender.HasValue)
         {
-            Console.WriteLine($"Scrolling to init position after prerender : {_goToIndexAfterRender}");
+            LogMessage($"Scrolling to init position after prerender : {_goToIndexAfterRender}");
             await SnapToIndexAsync(_goToIndexAfterRender.Value, true, "auto");
-            Console.WriteLine($"Scrolled to init position after prerender : {_goToIndexAfterRender}");
             _goToIndexAfterRender = null;
         }
+        else if (_needResnapAfterResize)
+        {
+            _needResnapAfterResize = false;
+            LogMessage($"Scrolling to set position after resize : {_goToIndexAfterRender}");
+            await SnapToIndexAsync(SelectedIndex, false, "auto");
+        }
 
-
+        if (firstRender && UseRelativeWidth())
+            await Task.Delay(50); // Wait for the DOM to settle after the initial render
         await SyncWidth();
         LeavePrerenderMode();
     }
@@ -332,7 +341,7 @@
         if (_selectedIndex != index)
         {
             _selectedIndex = index;
-            Console.WriteLine($"_selectedIndex changed : {_selectedIndex}");
+            LogMessage($"_selectedIndex changed : {_selectedIndex}");
             if (AllowCallbacks)
             {
                 SelectedIndex = index;
@@ -356,8 +365,9 @@
             if (expectedValue != _itemsFullWidth)
             {
                 _itemsFullWidth = expectedValue;
+                _needResnapAfterResize = true;
                 StateHasChanged();
-                Console.WriteLine($"Width changed : {_itemsFullWidth}");
+                LogMessage($"Width changed : {_itemsFullWidth}");
             }
         }
     }
@@ -375,6 +385,13 @@
         }
 
         _dotNetRef?.Dispose();
+    }
+
+    private void LogMessage(string message)
+    {
+        if (!LogStuff)
+            return;
+        Console.WriteLine(message);
     }
 
     private static class EventUtil

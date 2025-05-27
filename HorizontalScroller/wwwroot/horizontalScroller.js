@@ -54,7 +54,8 @@ export function initScroller(element, dotNetRef, options) {
         opts: options
     });
     if (options.startIndex != 0) {
-        console.log("Scrolling to start index: " + options.startIndex)
+        if(options.log)
+            console.log("Scrolling to start index: " + options.startIndex)
         snapToIndex(element, options.startIndex, 'auto');
     }
 }
@@ -184,7 +185,8 @@ export function snapToIndex(element, index, scrollToBehavior = 'smooth', priorit
     var oldIndex = state.currentIndex;
     state.currentIndex = index;
     state.priorityScrollInProgress = true;
-    console.log('Snapping to index ' + index +', at ' + targetScroll)
+    if (state.opts.log)
+        console.log('Snapping to index ' + index +', at ' + targetScroll)
     element.scrollTo({
         left: targetScroll,
         behavior: scrollToBehavior
@@ -199,7 +201,8 @@ function dispose(element) {
     if (state) {
         state.observers.forEach(o => o.disconnect());
         window.removeEventListener('resize', state.handleResize);
-        console.log('handler removed');
+        if (state.opts.log)
+            console.log('handler removed');
         scrollers.delete(element);
     }
 }
