@@ -1,4 +1,5 @@
 ﻿@typeparam TItem
+@using System.Reflection
 @using Microsoft.JSInterop
 @implements IAsyncDisposable
 <div class="parent-wrapper">
@@ -112,12 +113,8 @@
     [Parameter] public bool EnableSnapping { get; set; } = true;
 
     /// <summary>
-    /// Carousel mode enables items to take the full width of the available space (or share equally whit others using CarouselItemsPerSlideSelector)
-    /// </summary>
-    [Parameter, Obsolete("Use ItemsPerSlideSelector and don't specify ItemWidth", true)] public bool CarouselMode { get; set; }
-
-    /// <summary>
-    /// If ItemWidth is "auto", and if not null, width of item will be decided by this
+    /// If ItemWidth is "auto", and if not null, width of item will be decided by this.
+    /// This is called everytime the component is rendered. Do not use StateHasChanged in this function.
     /// </summary>
     [Parameter] public Func<WidthInfo?, int>? ItemsPerSlideSelector { get; set; }
 
@@ -133,6 +130,10 @@
     /// Callback on landing on an index
     /// </summary>
     [Parameter] public EventCallback<int> OnSnapped { get; set; }
+    /// <summary>
+    /// Temporary parameter to help developers understand production issues.
+    /// </summary>
+    [Parameter] public bool LogToConsole { get; set; }
 
     [Inject] private IJSRuntime Js { get; set; } = null!;
 
@@ -149,7 +150,6 @@
     private bool _isDragging;
     private bool _preRenderMode;
     private bool _initialized;
-    private const bool LogStuff = true;
 
     protected override void OnInitialized()
     {
@@ -175,7 +175,7 @@
         if (firstRender)
         {
             _dotNetRef = DotNetObjectReference.Create(this);
-            _scrollerModule = await Js.InvokeAsync<IJSObjectReference>("import", moduleLocation);
+            _scrollerModule = await Js.InvokeAsync<IJSObjectReference>("import", moduleLocation + "?v=" + (Assembly.GetAssembly(typeof(HorizontalScroller<string>))?.GetName().Version?.ToString() ?? "1"));
             if (_scrollerModule != null)
             {
                 await _scrollerModule.InvokeVoidAsync("initScroller", _scrollerRef, _dotNetRef, new
@@ -184,7 +184,7 @@
                     inertiaDecay = (InertiaDecay),
                     enableSnapping = EnableSnapping,
                     enableDrag = EnableDrag,
-                    log = LogStuff
+                    log = LogToConsole
                 });
                 _initialized = true;
             }
@@ -389,7 +389,7 @@
 
     private void LogMessage(string message)
     {
-        if (!LogStuff)
+        if (!LogToConsole)
             return;
         Console.WriteLine(message);
     }

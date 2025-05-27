@@ -55,7 +55,7 @@ export function initScroller(element, dotNetRef, options) {
     });
     if (options.startIndex != 0) {
         if(options.log)
-            console.log("Scrolling to start index: " + options.startIndex)
+            console.log("To start index: " + options.startIndex)
         snapToIndex(element, options.startIndex, 'auto');
     }
 }
@@ -66,7 +66,6 @@ export function getSizeInfo(element) {
         ParentWidth: parentWrapper.offsetWidth || 0,
         ViewportWidth: window.innerWidth || 0
     };
-    //console.log(res);
     return res;
 }
 
@@ -202,7 +201,7 @@ function dispose(element) {
         state.observers.forEach(o => o.disconnect());
         window.removeEventListener('resize', state.handleResize);
         if (state.opts.log)
-            console.log('handler removed');
+            console.log('Scroller handlers removed');
         scrollers.delete(element);
     }
 }
