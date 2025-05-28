@@ -1,27 +1,27 @@
-.scroller-container {
+.bhs-container {
     overflow-x: hidden;
     overflow-y: hidden;
     cursor: grab;
     position: relative;
 }
 
-.scroller-content {
+.bhs-content {
     display: flex;
     flex-direction: row;
     white-space: nowrap;
 }
 
-.scroller-item {
+.bhs-item {
     flex: 0 0 auto;
     margin-right: var(--item-spacing);
     white-space: normal;
 }
 
-::deep .item-using-width-per-slide {
+::deep .width-per-slide {
     width: calc((var(--container-width) - ((var(--items-per-slide) - 1) * var(--item-spacing))) / var(--items-per-slide));
 }
 
-.scroller-end-spacer {
+.bhs-end-spacer {
     flex: 0 0 auto;
     width: var(--end-spacer-width, 0px);
 }

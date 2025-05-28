@@ -20,7 +20,7 @@ export function initScroller(element, dotNetRef, options) {
         if (!state) return;
         state.priorityScrollInProgress = false;
     });
-    var parentWrapper = element.closest('.parent-wrapper');
+    var parentWrapper = element.closest('.bhs');
     // observe body
     const bodyObserver = new MutationObserver((mutationList) => {
         for (const mutation of mutationList) {
@@ -61,7 +61,7 @@ export function initScroller(element, dotNetRef, options) {
 }
 
 export function getSizeInfo(element) {
-    var parentWrapper = element.closest('.parent-wrapper');
+    var parentWrapper = element.closest('.bhs');
     var res = {
         ParentWidth: parentWrapper.offsetWidth || 0,
         ViewportWidth: window.innerWidth || 0
@@ -126,13 +126,13 @@ function scheduleSnap(element) {
     }, 100);
 }
 function updateNearest(element) {
-    const item = element.querySelector('.scroller-item');
+    const item = element.querySelector('.bhs-item');
     if (!item) return;
 
     const currentScroll = element.scrollLeft;
     const state = scrollers.get(element);
 
-    const items = Array.from(element.querySelectorAll('.scroller-item'));
+    const items = Array.from(element.querySelectorAll('.bhs-item'));
     if (items.length == 0)
         return;
 
@@ -162,7 +162,7 @@ function visibilityChanged(element) {
 }
 
 export function snapToNext(element) {
-    const items = Array.from(element.querySelectorAll('.scroller-item'))
+    const items = Array.from(element.querySelectorAll('.bhs-item'))
     const state = scrollers.get(element);
 
     if (state.currentIndex < items.length - 1) {
@@ -184,7 +184,7 @@ export function snapToNearest(element) {
 
 export function snapToIndex(element, index, scrollToBehavior = 'smooth', priority = true) {
     const state = scrollers.get(element);
-    const items = Array.from(element.querySelectorAll('.scroller-item'));
+    const items = Array.from(element.querySelectorAll('.bhs-item'));
     if (items.length == 0 || isNaN(index))
         return;
     if (!priority && state.priorityScrollInProgress)

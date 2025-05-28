@@ -2,7 +2,7 @@
 @using System.Reflection
 @using Microsoft.JSInterop
 @implements IAsyncDisposable
-<div class="parent-wrapper">
+<div class="bhs">
     @if (_preRenderMode && ItemTemplate != null && Items != null)
     {
         var itemCount = GetItemsPerSlide();
@@ -23,20 +23,20 @@
         </div>
     }
     <div style="@(AllowOverflow ? $"overflow-x: visible;margin-left:-{OverflowAllowedWidthOnLeft};" : "") @(_preRenderMode ? "visibility:hidden;position:absolute;left:0;right:0;top:0;" : "")">
-        <div class="scroller-container" style="--item-spacing:@ItemSpacing;--container-width:@_itemsFullWidth;--end-spacer-width:@EndSpacerWidth;width:@(AllowOverflow ? $"calc({OverflowViewportWidth} + {OverflowAllowedWidthOnLeft})" : "initial");padding-left:@(AllowOverflow? OverflowAllowedWidthOnLeft : "0");"
+        <div class="bhs-container" style="--item-spacing:@ItemSpacing;--container-width:@_itemsFullWidth;--end-spacer-width:@EndSpacerWidth;width:@(AllowOverflow ? $"calc({OverflowViewportWidth} + {OverflowAllowedWidthOnLeft})" : "initial");padding-left:@(AllowOverflow? OverflowAllowedWidthOnLeft : "0");"
              @onmousedown="EventUtil.AsNonRenderingEventHandler<MouseEventArgs>(OnMouseDown)"
              @onmouseup="EventUtil.AsNonRenderingEventHandler<MouseEventArgs>(OnMouseUp)"
              @onmouseleave="EventUtil.AsNonRenderingEventHandler<MouseEventArgs>(OnMouseUp)"
              @ontouchstart="EventUtil.AsNonRenderingEventHandler<TouchEventArgs>(OnTouchStart)"
              @ontouchend="EventUtil.AsNonRenderingEventHandler<TouchEventArgs>(OnTouchEnd)"
              @ref="_scrollerRef">
-            <div class="scroller-content" role="list">
+            <div class="bhs-content" role="list">
                 @if (Items != null && ItemTemplate != null)
                 {
                     var relativeWidthItemsCount = UseRelativeWidth() ? GetItemsPerSlide() : (int?)null;
                     @foreach (var item in Items)
                     {
-                        <div class="scroller-item @(UseRelativeWidth() ? "item-using-width-per-slide" : "")" style="--items-per-slide:@(relativeWidthItemsCount ?? 1);">
+                        <div class="bhs-item @(UseRelativeWidth() ? "width-per-slide" : "")" style="--items-per-slide:@(relativeWidthItemsCount ?? 1);">
                             <div style="height: 100%;@(relativeWidthItemsCount != null ? "" : $"width:{ItemWidth};") @(EnableDrag ? "user-select: none;" : "")">
                                 @if (!_preRenderMode)
                                 {
@@ -50,7 +50,7 @@
                         </div>
                     }
 
-                    <div class="scroller-end-spacer"></div>
+                    <div class="bhs-end-spacer"></div>
                 }
             </div>
         </div>
