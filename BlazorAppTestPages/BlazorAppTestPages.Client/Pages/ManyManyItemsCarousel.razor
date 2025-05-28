@@ -1,0 +1,27 @@
+﻿@page "/many-many-items"
+@rendermode InteractiveWebAssembly
+@using BlazorHorizontalScroller
+
+<PageTitle>Many many</PageTitle>
+<div style="overflow-x: hidden;">
+    <div class="container-md">
+        <HorizontalScroller Items="Enumerable.Range(0, 100)" ItemsPerSlideSelector="_ => 5" @bind-SelectedIndex="_specialCarouselIndex">
+            <ItemTemplate>
+                <div class="card bg-primary">
+                    <div class="card-body">
+                        Card #@context
+                    </div>
+                </div>
+            </ItemTemplate>
+        </HorizontalScroller>
+    </div>
+</div>
+
+@code {
+    private HorizontalScroller<int> _modalScroller;
+    private int _indexInModal = 1;
+
+    private bool showModal = false;
+    private bool _showSpecialCarousel;
+    private int _specialCarouselIndex = 7;
+}

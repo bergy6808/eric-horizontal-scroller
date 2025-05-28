@@ -92,7 +92,7 @@ export function dragMove(element, clientX) {
 
 export function endDrag(element) {
     const state = scrollers.get(element);
-    if (!state) return;
+    if (!state || !state.isDragging) return;
 
     state.isDragging = false;
     const minVelocity = 0.6;
@@ -129,10 +129,25 @@ function updateNearest(element) {
     const item = element.querySelector('.scroller-item');
     if (!item) return;
 
-    const itemWidth = item.offsetWidth;
     const currentScroll = element.scrollLeft;
     const state = scrollers.get(element);
-    const nearestIndex = Math.round(currentScroll / itemWidth);
+
+    const items = Array.from(element.querySelectorAll('.scroller-item'));
+    if (items.length == 0)
+        return;
+
+    var distance = 1000000;
+    var nearestIndex = items.length - 1;
+    for (var i = 0; i < items.length; i++) {
+        var currentDistance = Math.abs(items[i].offsetLeft - currentScroll);
+        if (currentDistance < distance) {
+            distance = currentDistance;
+            nearestIndex = i;
+        }
+        else
+            break;
+    }
+
     if (state && !isNaN(nearestIndex) && state.nearestIndex != nearestIndex) {
         state.nearestIndex = nearestIndex;
         state.dotNetRef.invokeMethodAsync("NotifyNearestIndexChanged", nearestIndex)

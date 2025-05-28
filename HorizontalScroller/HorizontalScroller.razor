@@ -168,14 +168,14 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
 #if DEBUG
-        const string moduleLocation = "./_content/BlazorHorizontalScroller/horizontalScroller.js";
+        string moduleLocation = "./_content/BlazorHorizontalScroller/horizontalScroller.js";
 #else
-        const string moduleLocation = "./_content/BlazorHorizontalScroller/horizontalScroller.min.js";
+        string moduleLocation = "./_content/BlazorHorizontalScroller/horizontalScroller.min.js" + "?v=" + (Assembly.GetAssembly(typeof(HorizontalScroller<string>))?.GetName().Version?.ToString() ?? "1");
 #endif
         if (firstRender)
         {
             _dotNetRef = DotNetObjectReference.Create(this);
-            _scrollerModule = await Js.InvokeAsync<IJSObjectReference>("import", moduleLocation + "?v=" + (Assembly.GetAssembly(typeof(HorizontalScroller<string>))?.GetName().Version?.ToString() ?? "1"));
+            _scrollerModule = await Js.InvokeAsync<IJSObjectReference>("import", moduleLocation );
             if (_scrollerModule != null)
             {
                 await _scrollerModule.InvokeVoidAsync("initScroller", _scrollerRef, _dotNetRef, new
