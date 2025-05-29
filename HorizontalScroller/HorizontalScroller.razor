@@ -2,7 +2,7 @@
 @using System.Reflection
 @using Microsoft.JSInterop
 @implements IAsyncDisposable
-<div class="bhs">
+<div class="bhs" style="@(AllowOverflow ? "" : "overflow:hidden;")">
     @if (_preRenderMode && ItemTemplate != null && Items != null)
     {
         var itemCount = GetItemsPerSlide();
