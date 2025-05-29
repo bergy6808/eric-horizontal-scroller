@@ -62,6 +62,7 @@ export function initScroller(element, dotNetRef, options) {
 
 export function getSizeInfo(element) {
     var parentWrapper = element.closest('.bhs');
+    //console.log(parentWrapper.offsetWidth);
     var res = {
         ParentWidth: parentWrapper.offsetWidth || 0,
         ViewportWidth: window.innerWidth || 0
