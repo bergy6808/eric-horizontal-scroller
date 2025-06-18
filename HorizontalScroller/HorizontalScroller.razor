@@ -3,19 +3,19 @@
 @using Microsoft.JSInterop
 @implements IAsyncDisposable
 <div class="bhs" style="@(AllowOverflow ? "" : "overflow:hidden;")">
-    @if (_preRenderMode && ItemTemplate != null && Items != null)
+    @if (_preRenderMode && ItemTemplate != null && _items != null)
     {
         var itemCount = GetItemsPerSlide();
         <div style="display:flex;gap: @ItemSpacing;">
-            @foreach (var item in Items.Skip(SelectedIndex).Take(itemCount))
+            @foreach (var item in _items.Skip(SelectedIndex).Take(itemCount))
             {
                 <div style="height: 100%;flex-grow: 1;">
                     @ItemTemplate(item)
                 </div>
             }
-            @if (itemCount > Items.Count())
+            @if (itemCount > _items.Count())
             {
-                @foreach (var _ in Enumerable.Range(0, itemCount - Items.Count()))
+                @foreach (var _ in Enumerable.Range(0, itemCount - _items.Count()))
                 {
                     <div style="height: 100%;flex-grow: 1;"></div>
                 }
@@ -31,10 +31,10 @@
              @ontouchend="EventUtil.AsNonRenderingEventHandler<TouchEventArgs>(OnTouchEnd)"
              @ref="_scrollerRef">
             <div class="bhs-content" role="list">
-                @if (Items != null && ItemTemplate != null)
+                @if (_items != null && ItemTemplate != null)
                 {
-                    var relativeWidthItemsCount = UseRelativeWidth() ? GetItemsPerSlide() : (int?)null;
-                    @foreach (var item in Items)
+                    var relativeWidthItemsCount = UseRelativeWidth() ? _itemsPerSlide : (int?)null;
+                    @foreach (var item in _items)
                     {
                         <div class="bhs-item @(UseRelativeWidth() ? "width-per-slide" : "")" style="--items-per-slide:@(relativeWidthItemsCount ?? 1);">
                             <div style="height: 100%;@(relativeWidthItemsCount != null ? "" : $"width:{ItemWidth};") @(EnableDrag ? "user-select: none;" : "")">
@@ -113,6 +113,11 @@
     [Parameter] public bool EnableSnapping { get; set; } = true;
 
     /// <summary>
+    /// The internal items list will grow to allow infinite scrolling. SelectedIndex will still stay within the bounds of the original items.
+    /// </summary>
+    [Parameter] public bool EnableLooping { get; set; }
+
+    /// <summary>
     /// If ItemWidth is "auto", and if not null, width of item will be decided by this.
     /// This is called everytime the component is rendered. Do not use StateHasChanged in this function.
     /// </summary>
@@ -139,30 +144,62 @@
 
     private bool AllowCallbacks => _goToIndexAfterRender == null && _scrollerModule != null && !_preRenderMode;
 
+    private List<TItem>? _realItems;
+    private List<TItem>? _items;
     private ElementReference? _scrollerRef;
     private IJSObjectReference? _scrollerModule;
     private DotNetObjectReference<HorizontalScroller<TItem>>? _dotNetRef;
     private string _itemsFullWidth = "75vw";
     private bool _needResnapAfterResize;
     private WidthInfo? _widthInfo;
-    private int _selectedIndex;
+    private int _localSelectedIndex; // local index
     private int? _goToIndexAfterRender;
     private bool _isDragging;
     private bool _preRenderMode;
     private bool _initialized;
+    private int? _realItemCount;
+    private int _itemsPerSlide = 1;
 
     protected override void OnInitialized()
     {
-        _preRenderMode = UseRelativeWidth() && Items != null && ItemTemplate != null;
+        _preRenderMode = UseRelativeWidth() && _items != null && ItemTemplate != null;
     }
 
     protected override async Task OnParametersSetAsync()
     {
-        if (_scrollerModule != null && _selectedIndex != SelectedIndex && !_isDragging && _initialized)
+        if (Items == null)
+            return;
+
+        _itemsPerSlide = GetItemsPerSlide();
+        _realItems = Items.ToList();
+        _realItemCount = _realItems.Count;
+        _items = _realItems.ToList();
+        ManageLoopItems();
+        var requiredSelectedIndex = PublicIndexToLocalIndex(SelectedIndex);
+        if (_scrollerModule != null && _localSelectedIndex != requiredSelectedIndex && !_isDragging && _initialized)
         {
-            LogMessage($"Scrolling to index by parameter : {SelectedIndex}");
-            await SnapToIndexAsync(SelectedIndex, false);
+            LogMessage($"Scrolling to index by parameter : {requiredSelectedIndex}");
+            await SnapToIndexAsync(requiredSelectedIndex, false);
         }
+    }
+
+    protected override bool ShouldRender()
+    {
+        var should = base.ShouldRender();
+        if (should)
+        {
+            _itemsPerSlide = GetItemsPerSlide();
+            ManageLoopItems();
+        }
+
+        return should;
+    }
+
+    private void ManageLoopItems()
+    {
+        if (EnableLooping && _realItems?.Any() == true)
+            while(_localSelectedIndex > _items.Count - 30)
+                _items.AddRange(_realItems);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -275,7 +312,7 @@
     public async Task SnapToNextSlide()
     {
         var increment = GetItemsPerSlide();
-        await SnapToIndexAsync(_selectedIndex + increment);
+        await SnapToIndexAsync(_localSelectedIndex + increment);
     }
 
     /// <summary>
@@ -292,7 +329,7 @@
     public async Task SnapToPreviousSlide()
     {
         var increment = -GetItemsPerSlide();
-        await SnapToIndexAsync(_selectedIndex + increment);
+        await SnapToIndexAsync(_localSelectedIndex + increment);
     }
     /// <summary>
     /// Goes to a specific item index
@@ -301,7 +338,7 @@
     /// <returns></returns>
     public async Task SnapToItemIndex(int index)
     {
-        await SnapToIndexAsync(index);
+        await SnapToIndexAsync(PublicIndexToLocalIndex(index));
     }
     /// <summary>
     /// Goes to a specific slide index. Will be different if ItemsPerSlideSelector returns something > 1.
@@ -311,7 +348,7 @@
     public async Task SnapToSlideIndex(int index)
     {
         var itemIndex = GetItemsPerSlide() * index;
-        await SnapToIndexAsync(itemIndex);
+        await SnapToIndexAsync(PublicIndexToLocalIndex(itemIndex));
     }
 
     private async Task SnapToIndexAsync(int index, bool priority = true, string speed = "smooth")
@@ -324,6 +361,8 @@
     }
 
 
+    private int LocalIndexToPublicIndex(int x) => (_realItemCount ?? 0) == 0 ? 0 : x % _realItemCount.Value;
+    private int PublicIndexToLocalIndex(int x) => (_realItemCount ?? 0) == 0 ? 0 : Enumerable.Range(0, _items.Count).MinBy(i => i % _realItemCount.Value == x % _realItemCount.Value ? Math.Abs(_localSelectedIndex - i) : 100000);
     private int GetItemsPerSlide() => UseRelativeWidth() ? (ItemsPerSlideSelector?.Invoke(_widthInfo) ?? 1) : 1;
 
     private bool UseRelativeWidth() => ItemWidth == "auto" && ItemsPerSlideSelector != null;
@@ -333,19 +372,19 @@
     {
         await NotifyNearestIndexChanged(index);
         if (AllowCallbacks)
-            await OnSnapped.InvokeAsync(index);
+            await OnSnapped.InvokeAsync(LocalIndexToPublicIndex(index));
     }
     [JSInvokable]
     public async Task NotifyNearestIndexChanged(int index)
     {
-        if (_selectedIndex != index)
+        if (_localSelectedIndex != index)
         {
-            _selectedIndex = index;
-            LogMessage($"_selectedIndex changed : {_selectedIndex}");
+            _localSelectedIndex = index;
+            LogMessage($"_selectedIndex changed : {_localSelectedIndex}");
             if (AllowCallbacks)
             {
-                SelectedIndex = index;
-                await SelectedIndexChanged.InvokeAsync(index);
+                SelectedIndex = LocalIndexToPublicIndex(index);
+                await SelectedIndexChanged.InvokeAsync(SelectedIndex);
             }
         }
     }

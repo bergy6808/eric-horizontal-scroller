@@ -1,0 +1,48 @@
+﻿@page "/loop-carousel"
+@rendermode InteractiveWebAssembly
+@using BlazorHorizontalScroller
+
+<PageTitle>Many many</PageTitle>
+<div style="overflow-x: hidden;">
+    <div class="container-md">
+        <h2>Looping 6 items. Current index : @_carouselIndex0</h2>
+        <HorizontalScroller Items="Enumerable.Range(0, 6)" ItemsPerSlideSelector="_ => 5" EnableLooping="true" @bind-SelectedIndex="_carouselIndex0">
+            <ItemTemplate>
+                <div class="card bg-primary">
+                    <div class="card-body">
+                        Card #@context
+                    </div>
+                </div>
+            </ItemTemplate>
+        </HorizontalScroller>
+        <h2>Looping 1 item. Current index : @_carouselIndex1</h2>
+        <HorizontalScroller Items="Enumerable.Range(0, 1)" ItemsPerSlideSelector="_ => 2" EnableLooping="true" @bind-SelectedIndex="_carouselIndex1">
+            <ItemTemplate>
+                <div class="card bg-primary">
+                    <div class="card-body">
+                        Card #@context
+                    </div>
+                </div>
+            </ItemTemplate>
+        </HorizontalScroller>
+        <h2>Looping 20 item. Current index : @_carouselIndex2</h2>
+        <HorizontalScroller Items="Enumerable.Range(0, 20)" ItemWidth="200px" EnableLooping="true" @bind-SelectedIndex="_carouselIndex2">
+            <ItemTemplate>
+                <div class="card bg-primary">
+                    <div class="card-body">
+                        Card #@context
+                    </div>
+                </div>
+            </ItemTemplate>
+        </HorizontalScroller>
+    </div>
+</div>
+
+@code {
+    private HorizontalScroller<int> _modalScroller;
+    private int _indexInModal = 1;
+
+    private bool showModal = false;
+    private bool _showSpecialCarousel;
+    private int _carouselIndex0, _carouselIndex1, _carouselIndex2;
+}
