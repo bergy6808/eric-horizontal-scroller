@@ -181,7 +181,6 @@ function getVisibleItems(element, index) {
         var item = items[i];
         res = res.concat(item);
         spaceTaken += item.offsetWidth + parseInt(getStyle(item, 'margin-right').slice(0, -2));
-        console.log(spaceTaken);
         if (spaceTaken > width)
             break;
     }
@@ -202,7 +201,6 @@ export function getMaxVisibleHeight(element) {
     });
 
     return maxHeight;
-
 }
 
 export function snapToNext(element) {

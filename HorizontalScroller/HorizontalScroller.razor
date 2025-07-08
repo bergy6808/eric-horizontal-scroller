@@ -395,7 +395,7 @@
 
     private async Task AdjustHeightIfNecessary()
     {
-        if (AdjustHeightOnSnap)
+        if (AdjustHeightOnSnap && _scrollerModule != null && _scrollerRef != null)
         {
             var oldHeight = _maxHeight;
             try
