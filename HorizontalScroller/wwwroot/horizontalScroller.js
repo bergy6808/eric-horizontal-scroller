@@ -197,7 +197,6 @@ export function getMaxVisibleHeight(element) {
     });
     var heights = Array.from(childItems.map(x => x.offsetHeight));
     var maxHeight = Math.max(...heights);
-    console.log(maxHeight);
     childItems.forEach(x => {
         x.style.height = '100%';
     });

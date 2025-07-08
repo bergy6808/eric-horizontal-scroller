@@ -257,8 +257,8 @@
         if (firstRender && UseRelativeWidth())
             await Task.Delay(50); // Wait for the DOM to settle after the initial render
         await SyncWidth();
-        await AdjustHeightIfNecessary();
         LeavePrerenderMode();
+        await AdjustHeightIfNecessary();
     }
 
     private void LeavePrerenderMode()
@@ -398,7 +398,14 @@
         if (AdjustHeightOnSnap)
         {
             var oldHeight = _maxHeight;
-            _maxHeight = await _scrollerModule.InvokeAsync<double?>("getMaxVisibleHeight", _scrollerRef);
+            try
+            {
+                _maxHeight = await _scrollerModule.InvokeAsync<double?>("getMaxVisibleHeight", _scrollerRef);
+            }
+            catch
+            {
+                _maxHeight = null;
+            }
             if (_maxHeight != oldHeight)
                 StateHasChanged();
         }
