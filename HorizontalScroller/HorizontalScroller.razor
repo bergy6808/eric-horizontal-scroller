@@ -9,7 +9,7 @@
         <div style="display:flex;gap: @ItemSpacing;">
             @foreach (var item in _items.Skip(SelectedIndex).Take(itemCount))
             {
-                <div style="height: 100%;flex-grow: 1;">
+                <div style="flex-grow: 1;flex-basis:0;">
                     @ItemTemplate(item)
                 </div>
             }
@@ -17,13 +17,13 @@
             {
                 @foreach (var _ in Enumerable.Range(0, itemCount - _items.Count()))
                 {
-                    <div style="height: 100%;flex-grow: 1;"></div>
+                    <div style="flex-grow: 1;flex-basis:0;"></div>
                 }
             }
         </div>
     }
-    <div style="@(AllowOverflow ? $"overflow-x: visible;margin-left:-{OverflowAllowedWidthOnLeft};" : "") @(_preRenderMode ? "visibility:hidden;position:absolute;left:0;right:0;top:0;" : "")">
-        <div class="bhs-container" style="--item-spacing:@ItemSpacing;--container-width:@_itemsFullWidth;--end-spacer-width:@EndSpacerWidth;width:@(AllowOverflow ? $"calc({OverflowViewportWidth} + {OverflowAllowedWidthOnLeft})" : "initial");padding-left:@(AllowOverflow? OverflowAllowedWidthOnLeft : "0");"
+    <div style="@(AllowOverflow ? $"overflow-x: clip;margin-left:-{OverflowAllowedWidthOnLeft};" : "") @(_preRenderMode ? "visibility:hidden;position:absolute;left:0;right:0;top:0;" : "")">
+        <div class="bhs-container" style="--item-spacing:@ItemSpacing;--container-width:@_itemsFullWidth;--end-spacer-width:@EndSpacerWidth;width:@(AllowOverflow ? $"calc({OverflowViewportWidth} + {OverflowAllowedWidthOnLeft})" : "initial");padding-left:@(AllowOverflow? OverflowAllowedWidthOnLeft : "0");max-height: 4000px;@(_maxHeight.HasValue ? $"transition: max-height 0.7s cubic-bezier(0, 1, 0, 1);max-height: {_maxHeight}px;" : "")"
              @onmousedown="EventUtil.AsNonRenderingEventHandler<MouseEventArgs>(OnMouseDown)"
              @onmouseup="EventUtil.AsNonRenderingEventHandler<MouseEventArgs>(OnMouseUp)"
              @onmouseleave="EventUtil.AsNonRenderingEventHandler<MouseEventArgs>(OnMouseUp)"
@@ -37,7 +37,7 @@
                     @foreach (var item in _items)
                     {
                         <div class="bhs-item @(UseRelativeWidth() ? "width-per-slide" : "")" style="--items-per-slide:@(relativeWidthItemsCount ?? 1);">
-                            <div style="height: 100%;@(relativeWidthItemsCount != null ? "" : $"width:{ItemWidth};") @(EnableDrag ? "user-select: none;" : "")">
+                            <div style="height: 100%; @(relativeWidthItemsCount != null ? "" : $"width:{ItemWidth};") @(EnableDrag ? "user-select: none;" : "")">
                                 @if (!_preRenderMode)
                                 {
                                     @ItemTemplate(item)
@@ -139,6 +139,10 @@
     /// Temporary parameter to help developers understand production issues.
     /// </summary>
     [Parameter] public bool LogToConsole { get; set; }
+    /// <summary>
+    /// Adjusts the height of the items to the highest visible item on snap.
+    /// </summary>
+    [Parameter] public bool AdjustHeightOnSnap { get; set; }
 
     [Inject] private IJSRuntime Js { get; set; } = null!;
 
@@ -159,13 +163,14 @@
     private bool _initialized;
     private int? _realItemCount;
     private int _itemsPerSlide = 1;
+    private double? _maxHeight;
 
     protected override void OnInitialized()
     {
-        _preRenderMode = UseRelativeWidth() && _items != null && ItemTemplate != null;
+        _preRenderMode = UseRelativeWidth();
     }
 
-    protected override async Task OnParametersSetAsync()
+    protected override void OnParametersSet()
     {
         if (Items == null)
             return;
@@ -174,7 +179,17 @@
         _realItems = Items.ToList();
         _realItemCount = _realItems.Count;
         _items = _realItems.ToList();
+
+        if (_items == null || ItemTemplate == null)
+            _preRenderMode = false;
         ManageLoopItems();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Items == null)
+            return;
+
         var requiredSelectedIndex = PublicIndexToLocalIndex(SelectedIndex);
         if (_scrollerModule != null && _localSelectedIndex != requiredSelectedIndex && !_isDragging && _initialized)
         {
@@ -242,6 +257,7 @@
         if (firstRender && UseRelativeWidth())
             await Task.Delay(50); // Wait for the DOM to settle after the initial render
         await SyncWidth();
+        await AdjustHeightIfNecessary();
         LeavePrerenderMode();
     }
 
@@ -370,10 +386,24 @@
     [JSInvokable]
     public async Task NotifySnapToIndex(int index)
     {
+        await AdjustHeightIfNecessary();
+
         await NotifyNearestIndexChanged(index);
         if (AllowCallbacks)
             await OnSnapped.InvokeAsync(LocalIndexToPublicIndex(index));
     }
+
+    private async Task AdjustHeightIfNecessary()
+    {
+        if (AdjustHeightOnSnap)
+        {
+            var oldHeight = _maxHeight;
+            _maxHeight = await _scrollerModule.InvokeAsync<double?>("getMaxVisibleHeight", _scrollerRef);
+            if (_maxHeight != oldHeight)
+                StateHasChanged();
+        }
+    }
+
     [JSInvokable]
     public async Task NotifyNearestIndexChanged(int index)
     {

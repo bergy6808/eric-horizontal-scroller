@@ -92,6 +92,7 @@ When using AllowOverflow=true, you should style some ancestor with `overflow-x: 
 | `InertiaDecay`               | `double`                 | `0.9`        | Decay rate of inertia speed (1.0 = infinite scroll)                       |
 | `EnableDrag`                 | `bool`                   | `true`       | Enables drag-to-scroll with mouse/touch                                   |
 | `EnableSnapping`             | `bool`                   | `true`       | Enables snap-to-item behavior after drag                                  |
+| `AdjustHeightOnSnap`         | `bool`                   | `false`      | Will avoid visible cards to be to high because of other cards             |
 | `CarouselMode`               | `bool` *(Obsolete)*      | —            | **Deprecated:** use `ItemsPerSlideSelector` and don't specify `ItemWidth` |
 | `ItemsPerSlideSelector`      | `Func<WidthInfo?, int>?` | `null`       | If `ItemWidth` is `"auto"`, defines items per slide based on width info   |
 | `SelectedIndex`              | `int`                    | `0`          | Sets the currently selected slide index                                   |

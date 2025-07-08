@@ -154,12 +154,56 @@ function updateNearest(element) {
         state.dotNetRef.invokeMethodAsync("NotifyNearestIndexChanged", nearestIndex)
     }
 }
+function getStyle(el, prop) {
+    if (typeof getComputedStyle !== 'undefined') {
+        return getComputedStyle(el, null).getPropertyValue(prop);
+    } else {
+        return el.currentStyle[prop];
+    }
+}
 function visibilityChanged(element) {
     const state = scrollers.get(element);
     var was = state.visible;
     state.visible = element.offsetParent !== null;
     if (!was && state.visible)
         snapToIndex(element, state.currentIndex, 'auto');
+}
+function getVisibleItems(element, index) {
+    var parentWrapper = element.closest('.bhs');
+    const state = scrollers.get(element);
+    var width = parentWrapper.offsetWidth;
+    const items = Array.from(element.querySelectorAll('.bhs-item'));
+    if (width == 0)
+        return [index];
+    var res = [items[index]];
+    var spaceTaken = 0;
+    for (var i = index; i < items.length; i++) {
+        var item = items[i];
+        res = res.concat(item);
+        spaceTaken += item.offsetWidth + parseInt(getStyle(item, 'margin-right').slice(0, -2));
+        console.log(spaceTaken);
+        if (spaceTaken > width)
+            break;
+    }
+    return res;
+}
+export function getMaxVisibleHeight(element) {
+    const state = scrollers.get(element);
+    var index = state.currentIndex;
+    var visibleItems = getVisibleItems(element, index);
+    var childItems = visibleItems.map(x => x.querySelector('div'));
+    childItems.forEach(x => {
+        x.style.height = '';
+    });
+    var heights = Array.from(childItems.map(x => x.offsetHeight));
+    var maxHeight = Math.max(...heights);
+    console.log(maxHeight);
+    childItems.forEach(x => {
+        x.style.height = '100%';
+    });
+
+    return maxHeight;
+
 }
 
 export function snapToNext(element) {
@@ -201,7 +245,7 @@ export function snapToIndex(element, index, scrollToBehavior = 'smooth', priorit
     state.currentIndex = index;
     state.priorityScrollInProgress = true;
     if (state.opts.log)
-        console.log('Snapping to index ' + index +', at ' + targetScroll)
+        console.log('Snapping to index ' + index + ', at ' + targetScroll)
     element.scrollTo({
         left: targetScroll,
         behavior: scrollToBehavior

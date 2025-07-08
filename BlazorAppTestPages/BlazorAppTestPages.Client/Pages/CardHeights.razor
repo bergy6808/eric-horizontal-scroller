@@ -1,0 +1,43 @@
+﻿@page "/card-heights"
+@rendermode InteractiveWebAssembly
+@using BlazorHorizontalScroller
+
+<PageTitle>Card heights</PageTitle>
+<div>
+    <div class="">
+        <h1>Card heights</h1>
+        <h3>carousel</h3>
+        <HorizontalScroller Items="Enumerable.Range(0, 8)" ItemsPerSlideSelector="_ => 3" EnableLooping="true" AllowOverflow="true" AdjustHeightOnSnap="true">
+            <ItemTemplate>
+                <div class="card bg-primary h-100">
+                    <div class="card-body">
+                        @for (var i = 0; i < context; i++)
+                        {
+                            <p>Yo</p>
+                        }
+                    </div>
+                </div>
+            </ItemTemplate>
+        </HorizontalScroller>
+@*         <h3>cards</h3>
+        <HorizontalScroller Items="Enumerable.Range(0, 8)" ItemWidth="200px" EnableLooping="true" AllowOverflow="true" AdjustHeightOnSnap="true">
+            <ItemTemplate>
+                <div class="card bg-primary h-100">
+                    <div class="card-body">
+                        @for (var i = 0; i < context; i++)
+                        {
+                            <p>Yo</p>
+                        }
+                    </div>
+                </div>
+            </ItemTemplate>
+        </HorizontalScroller> *@
+        
+
+    </div>
+</div>
+<!-- Modal -->
+
+@code {
+
+}
