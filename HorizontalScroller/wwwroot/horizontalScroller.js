@@ -135,12 +135,13 @@ function updateNearest(element) {
 
     const items = Array.from(element.querySelectorAll('.bhs-item'));
     if (items.length == 0)
-        return;
+        return; 
 
+    var generalOffset = items[0].offsetLeft;
     var distance = 1000000;
     var nearestIndex = items.length - 1;
     for (var i = 0; i < items.length; i++) {
-        var currentDistance = Math.abs(items[i].offsetLeft - currentScroll);
+        var currentDistance = Math.abs(items[i].offsetLeft - generalOffset - currentScroll);
         if (currentDistance < distance) {
             distance = currentDistance;
             nearestIndex = i;

@@ -2,11 +2,7 @@
 
 A lightweight horizontal scroller component for Blazor WebAssembly and Blazor Server apps. Supports inertia-based dragging, snapping, item spacing, overflow control, and carousel mode — with smooth, touch-friendly interactions powered by JavaScript interop. 
 
-It is meant to be a super lightweight version of Slick Carousel, so I didn't include fancy stuff, but you can code some yourself using the callbacks. 
-
-This nuget is subject to big changes, use with precaution.
-
-> **Big thanks to ChatGPT for assisting in creating this component!**
+It is meant to be a super lightweight version of Slick Carousel, so some fancy stuff is not there, but you can code some yourself using the callbacks. 
 
 ---
 
