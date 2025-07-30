@@ -1,5 +1,8 @@
 ﻿@typeparam TItem
 @using Microsoft.JSInterop
+#if !DEBUG
+@using System.Reflection
+#endif
 @implements IAsyncDisposable
 <div class="bhs" style="@(AllowOverflow ? "" : "overflow:hidden;")">
     @if (_preRenderMode && ItemTemplate != null && _items != null)
