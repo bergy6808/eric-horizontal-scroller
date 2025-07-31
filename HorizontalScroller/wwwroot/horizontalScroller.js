@@ -33,8 +33,13 @@ export function initScroller(element, dotNetRef, options) {
         }
     });
     bodyObserver.observe(document.body, { attributes: false, childList: true, subtree: true });
-    // observe parent
-    var visibilityObserver = new ResizeObserver((entries) => {
+    // observe resize
+    var resizeObserver = new ResizeObserver((entries) => {
+            visibilityChanged(element);
+    });
+    resizeObserver.observe(element);
+    // observe visible
+    var visibilityObserver = new IntersectionObserver((entries) => {
             visibilityChanged(element);
     });
     visibilityObserver.observe(element);
@@ -48,7 +53,7 @@ export function initScroller(element, dotNetRef, options) {
         currentIndex: 0,
         visible: element.offsetParent !== null,
         dotNetRef: dotNetRef,
-        observers: Array.from([bodyObserver, visibilityObserver]),
+        observers: Array.from([bodyObserver, resizeObserver, visibilityObserver]),
         handleResize: handleResize,
         nearestIndex: 0,
         opts: options
@@ -166,8 +171,9 @@ function visibilityChanged(element) {
     const state = scrollers.get(element);
     var was = state.visible;
     state.visible = element.offsetParent !== null;
-    if (!was && state.visible)
+    if (!was && state.visible) {
         snapToIndex(element, state.currentIndex, 'auto');
+    }
 }
 function getVisibleItems(element, index) {
     var parentWrapper = element.closest('.bhs');

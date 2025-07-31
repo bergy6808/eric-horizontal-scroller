@@ -1,0 +1,67 @@
+﻿@page "/click-toggle"
+@rendermode InteractiveWebAssembly
+@using BlazorHorizontalScroller
+
+<style>
+    .animation-div {
+        transition: opacity 0.5s linear;
+        opacity: 0;
+        display:none;
+    }
+    .animation-div.show {
+            opacity: 1;
+            display: block;
+        }
+</style>
+
+<PageTitle>Carousel</PageTitle>
+<div style="overflow-x: hidden;">
+    <div class="container-md">
+        <h1>Simple toggle</h1>
+        
+        <button class="btn btn-primary" @onclick="ToggleVisible">@(_visible ? "Visible" : "Not visible")</button>
+        <button class="btn btn-primary" @onclick="ToggleRendered">@(_rendered ? "Rendered" : "Not rendered")</button>
+        <button class="btn btn-primary" @onclick="ToggleBoth">Toggle both</button>
+        <br />
+        @if (_rendered)
+        {
+            <div class="animation-div @(_visible ? "show" : "")">
+                <HorizontalScroller Items="Enumerable.Range(0, 10)" ItemsPerSlideSelector="_ => 1" SelectedIndex="2" LogToConsole="true">
+                    <ItemTemplate>
+                        <div class="card bg-primary">
+                            <div class="card-body">
+                                Card #@context
+                            </div>
+                        </div>
+                    </ItemTemplate>
+                </HorizontalScroller>
+            </div>
+        }
+        else
+        {
+            <p>Content is hidden</p>
+        }
+
+
+    </div>
+</div>
+@code {
+    private bool _visible;
+    private bool _rendered;
+
+    private void ToggleVisible()
+    {
+        _visible = !_visible;
+    }
+
+    private void ToggleRendered()
+    {
+        _rendered = !_rendered;
+    }
+    private void ToggleBoth()
+    {
+        ToggleRendered();
+        ToggleVisible();
+    }
+
+}

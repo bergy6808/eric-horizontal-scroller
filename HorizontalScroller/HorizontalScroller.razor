@@ -243,14 +243,15 @@
         }
         if (_goToIndexAfterRender.HasValue)
         {
+            _goToIndexAfterRender = null;
+            _needResnapAfterResize = false;
             LogMessage($"Scrolling to init position after prerender : {_goToIndexAfterRender}");
             await SnapToIndexAsync(_goToIndexAfterRender.Value, true, "auto");
-            _goToIndexAfterRender = null;
         }
         else if (_needResnapAfterResize)
         {
             _needResnapAfterResize = false;
-            LogMessage($"Scrolling to set position after resize : {_goToIndexAfterRender}");
+            LogMessage($"Scrolling to set position after resize : {SelectedIndex}");
             await SnapToIndexAsync(SelectedIndex, false, "auto");
         }
 
@@ -442,8 +443,8 @@
             {
                 _itemsFullWidth = expectedValue;
                 _needResnapAfterResize = true;
-                StateHasChanged();
                 LogMessage($"Width changed : {_itemsFullWidth}");
+                StateHasChanged();
             }
         }
     }
