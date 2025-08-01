@@ -257,9 +257,10 @@ export function snapToIndex(element, index, scrollToBehavior = 'smooth', priorit
     state.lastSnapWidth = getSizeInfo(element).ParentWidth;
     const scrollAtPositionZero = items[0].offsetLeft
     const targetScroll = items[index].offsetLeft - scrollAtPositionZero;
-    log(state.opts, 'Snapping to index ' + index);
+    log(state.opts, 'Snapping to index ' + index + ' | current width ' + state.lastSnapWidth);
     var oldIndex = state.currentIndex;
     state.currentIndex = index;
+    state.nearestIndex = index;
     if (state.lastSnapWidth > 20) {
         log(state.opts, 'Scrolling to position ' + targetScroll);
         state.priorityScrollInProgress = priority;
