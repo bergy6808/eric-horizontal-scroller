@@ -1,14 +1,14 @@
 let scrollers = new Map();
 
 export function initScroller(element, dotNetRef, options) {
-    var handleResize = () => {
-        log(options, 'resize window triggered');
-        updateNearest(element);
-        snapToNearest(element);
-        var sizeInfo = getSizeInfo(element);
-        dotNetRef.invokeMethodAsync('ResizedParent', sizeInfo);
-    }
-    window.addEventListener('resize', handleResize)
+    //var handleResize = () => {
+    //    log(options, 'resize window triggered');
+    //    updateNearest(element);
+    //    snapToNearest(element);
+    //    var sizeInfo = getSizeInfo(element);
+    //    dotNetRef.invokeMethodAsync('ResizedParent', sizeInfo);
+    //}
+    //window.addEventListener('resize', handleResize)
     element.addEventListener('touchmove', e => {
         if (e.touches.length)
             dragMove(element, e.touches[0].clientX)
@@ -57,7 +57,7 @@ export function initScroller(element, dotNetRef, options) {
         visible: element.offsetParent !== null,
         dotNetRef: dotNetRef,
         observers: Array.from([bodyObserver, resizeObserver, visibilityObserver]),
-        handleResize: handleResize,
+        //handleResize: handleResize,
         nearestIndex: 0,
         opts: options
     });
@@ -253,7 +253,7 @@ export function snapToIndex(element, index, scrollToBehavior = 'smooth', priorit
     const targetScroll = items[index].offsetLeft - scrollAtPositionZero;
     var oldIndex = state.currentIndex;
     state.currentIndex = index;
-    state.priorityScrollInProgress = true;
+    state.priorityScrollInProgress = priority;
     log(state.opts, 'Snapping to index ' + index + ', at ' + targetScroll);
     element.scrollTo({
         left: targetScroll,
@@ -267,7 +267,7 @@ function dispose(element) {
     const state = scrollers.get(element);
     if (state) {
         state.observers.forEach(o => o.disconnect());
-        window.removeEventListener('resize', state.handleResize);
+        //window.removeEventListener('resize', state.handleResize);
         log(state.opts, 'Scroller handlers removed');
         scrollers.delete(element);
     }
