@@ -2,6 +2,7 @@ let scrollers = new Map();
 
 export function initScroller(element, dotNetRef, options) {
     var handleResize = () => {
+        log(options, 'resize window triggered');
         updateNearest(element);
         snapToNearest(element);
         var sizeInfo = getSizeInfo(element);
@@ -35,12 +36,14 @@ export function initScroller(element, dotNetRef, options) {
     bodyObserver.observe(document.body, { attributes: false, childList: true, subtree: true });
     // observe resize
     var resizeObserver = new ResizeObserver((entries) => {
-            visibilityChanged(element);
+        log(options, 'resize observer triggered');
+        visibilityChanged(element);
     });
     resizeObserver.observe(element);
     // observe visible
     var visibilityObserver = new IntersectionObserver((entries) => {
-            visibilityChanged(element);
+        log(options, 'visibility observer triggered');
+        visibilityChanged(element);
     });
     visibilityObserver.observe(element);
 
@@ -58,16 +61,15 @@ export function initScroller(element, dotNetRef, options) {
         nearestIndex: 0,
         opts: options
     });
+    log(options, 'initialized');
     if (options.startIndex != 0) {
-        if(options.log)
-            console.log("To start index: " + options.startIndex)
+        log(options, "To start index: " + options.startIndex);
         snapToIndex(element, options.startIndex, 'auto');
     }
 }
 
 export function getSizeInfo(element) {
     var parentWrapper = element.closest('.bhs');
-    //console.log(parentWrapper.offsetWidth);
     var res = {
         ParentWidth: parentWrapper.offsetWidth || 0,
         ViewportWidth: window.innerWidth || 0
@@ -119,7 +121,6 @@ export function endDrag(element) {
 
     inertiaScroll();
 }
-
 function scheduleSnap(element) {
     const state = scrollers.get(element);
     if (!state) return;
@@ -193,6 +194,11 @@ function getVisibleItems(element, index) {
     }
     return res;
 }
+
+function log(options, m) {
+    if (options.log)
+        console.log(m);
+}
 export function getMaxVisibleHeight(element) {
     const state = scrollers.get(element);
     var index = state.currentIndex;
@@ -248,8 +254,7 @@ export function snapToIndex(element, index, scrollToBehavior = 'smooth', priorit
     var oldIndex = state.currentIndex;
     state.currentIndex = index;
     state.priorityScrollInProgress = true;
-    if (state.opts.log)
-        console.log('Snapping to index ' + index + ', at ' + targetScroll)
+    log(state.opts, 'Snapping to index ' + index + ', at ' + targetScroll);
     element.scrollTo({
         left: targetScroll,
         behavior: scrollToBehavior
@@ -263,8 +268,7 @@ function dispose(element) {
     if (state) {
         state.observers.forEach(o => o.disconnect());
         window.removeEventListener('resize', state.handleResize);
-        if (state.opts.log)
-            console.log('Scroller handlers removed');
+        log(state.opts, 'Scroller handlers removed');
         scrollers.delete(element);
     }
 }

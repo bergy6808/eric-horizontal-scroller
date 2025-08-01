@@ -108,6 +108,7 @@ When using AllowOverflow=true, you should style some ancestor with `overflow-x: 
 | `Task SnapToPreviousSlide()`       | `Task`      | Scrolls to the previous slide (number of items per slide depends on `ItemsPerSlideSelector`). |
 | `Task SnapToItemIndex(int index)`  | `Task`      | Scrolls to a specific item by its index.                                                      |
 | `Task SnapToSlideIndex(int index)` | `Task`      | Scrolls to a specific slide by its index (calculated by `ItemsPerSlideSelector`).             |
+| `Task SyncWidth()`                 | `Task`      | Triggers manually recalculation of available width
 
 
 ---
