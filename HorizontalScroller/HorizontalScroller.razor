@@ -243,10 +243,11 @@
         }
         if (_goToIndexAfterRender.HasValue)
         {
+            var goingTo = _goToIndexAfterRender.Value;
             _goToIndexAfterRender = null;
             _needResnapAfterResize = false;
-            LogMessage($"Scrolling to init position after prerender : {_goToIndexAfterRender}");
-            await SnapToIndexAsync(_goToIndexAfterRender.Value, true, "auto");
+            LogMessage($"Scrolling to init position after prerender : {goingTo}");
+            await SnapToIndexAsync(goingTo, true, "auto");
         }
         else if (_needResnapAfterResize)
         {
@@ -275,9 +276,16 @@
 
     private async Task SyncWidth()
     {
-        if (_scrollerModule != null && (UseRelativeWidth()))
-            _widthInfo = await _scrollerModule.InvokeAsync<WidthInfo>("getSizeInfo", _scrollerRef);
-        FullWidthChanged();
+        try
+        {
+            if (_scrollerModule != null && (UseRelativeWidth()))
+                _widthInfo = await _scrollerModule.InvokeAsync<WidthInfo>("getSizeInfo", _scrollerRef);
+            FullWidthChanged();
+        }
+        catch (ObjectDisposedException e)
+        {
+            LogMessage("Cannot sync width, object disposed");
+        }
     }
 
     private async Task OnMouseDown(MouseEventArgs e)

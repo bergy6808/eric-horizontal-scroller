@@ -258,7 +258,6 @@ export function snapToIndex(element, index, scrollToBehavior = 'smooth', priorit
         state.dotNetRef.invokeMethodAsync("NotifySnapToIndex", index)
 }
 
-
 function dispose(element) {
     const state = scrollers.get(element);
     if (state) {
