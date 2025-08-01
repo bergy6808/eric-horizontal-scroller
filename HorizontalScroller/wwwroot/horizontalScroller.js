@@ -1,13 +1,16 @@
 let scrollers = new Map();
 
-export function initScroller(element, dotNetRef, options) {
-    //var handleResize = () => {
-    //    log(options, 'resize window triggered');
-    //    updateNearest(element);
-    //    snapToNearest(element);
-    //    var sizeInfo = getSizeInfo(element);
-    //    dotNetRef.invokeMethodAsync('ResizedParent', sizeInfo);
-    //}
+export function initBhs(element, dotNetRef, options) {
+    var handleResize = () => {
+        const state = scrollers.get(element);
+        log(options, 'resize triggered');
+
+        if (state.lastSnapWidth > 20)
+            updateNearest(element);
+        snapToNearest(element);
+        var sizeInfo = getSizeInfo(element);
+        dotNetRef.invokeMethodAsync('ResizedParent', sizeInfo);
+    }
     //window.addEventListener('resize', handleResize)
     element.addEventListener('touchmove', e => {
         if (e.touches.length)
@@ -37,7 +40,7 @@ export function initScroller(element, dotNetRef, options) {
     // observe resize
     var resizeObserver = new ResizeObserver((entries) => {
         log(options, 'resize observer triggered');
-        visibilityChanged(element);
+        handleResize();
     });
     resizeObserver.observe(element);
     // observe visible
@@ -56,6 +59,7 @@ export function initScroller(element, dotNetRef, options) {
         currentIndex: 0,
         visible: element.offsetParent !== null,
         dotNetRef: dotNetRef,
+        lastSnapWidth: 0,
         observers: Array.from([bodyObserver, resizeObserver, visibilityObserver]),
         //handleResize: handleResize,
         nearestIndex: 0,
@@ -148,11 +152,11 @@ function updateNearest(element) {
     var nearestIndex = items.length - 1;
     for (var i = 0; i < items.length; i++) {
         var currentDistance = Math.abs(items[i].offsetLeft - generalOffset - currentScroll);
-        if (currentDistance < distance) {
+        if (currentDistance < distance || (currentDistance == distance && state.nearestIndex == i)) {
             distance = currentDistance;
             nearestIndex = i;
         }
-        else
+        else if (currentDistance != 0)
             break;
     }
 
@@ -249,16 +253,22 @@ export function snapToIndex(element, index, scrollToBehavior = 'smooth', priorit
         index = 0;
     if (index >= items.length)
         index = items.length - 1;
+
+    state.lastSnapWidth = getSizeInfo(element).ParentWidth;
     const scrollAtPositionZero = items[0].offsetLeft
     const targetScroll = items[index].offsetLeft - scrollAtPositionZero;
+    log(state.opts, 'Snapping to index ' + index);
     var oldIndex = state.currentIndex;
     state.currentIndex = index;
-    state.priorityScrollInProgress = priority;
-    log(state.opts, 'Snapping to index ' + index + ', at ' + targetScroll);
-    element.scrollTo({
-        left: targetScroll,
-        behavior: scrollToBehavior
-    });
+    if (state.lastSnapWidth > 20) {
+        log(state.opts, 'Scrolling to position ' + targetScroll);
+        state.priorityScrollInProgress = priority;
+        element.scrollTo({
+            left: targetScroll,
+            behavior: scrollToBehavior
+        });
+    }
+
     if (oldIndex != state.currentIndex)
         state.dotNetRef.invokeMethodAsync("NotifySnapToIndex", index)
 }

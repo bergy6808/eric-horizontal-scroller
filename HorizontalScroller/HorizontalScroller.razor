@@ -230,7 +230,7 @@
             _scrollerModule = await Js.InvokeAsync<IJSObjectReference>("import", moduleLocation );
             if (_scrollerModule != null)
             {
-                await _scrollerModule.InvokeVoidAsync("initScroller", _scrollerRef, _dotNetRef, new
+                await _scrollerModule.InvokeVoidAsync("initBhs", _scrollerRef, _dotNetRef, new
                 {
                     startIndex = SelectedIndex,
                     inertiaDecay = (InertiaDecay),
@@ -273,7 +273,10 @@
         _preRenderMode = false;
         StateHasChanged();
     }
-
+    /// <summary>
+    /// Manually triggers a width detection, in case the parent width changed and something prevents the component to detect it.
+    /// </summary>
+    /// <returns></returns>
     public async Task SyncWidth()
     {
         try
