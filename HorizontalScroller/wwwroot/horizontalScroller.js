@@ -7,9 +7,11 @@ export function initBhs(element, dotNetRef, options) {
 
         if (state.lastSnapWidth > 20)
             updateNearest(element);
-        snapToNearest(element);
         var sizeInfo = getSizeInfo(element);
-        dotNetRef.invokeMethodAsync('ResizedParent', sizeInfo);
+        if (state.lastSnapWidth != sizeInfo.ParentWidth) {
+            snapToNearest(element, 'auto', false);
+            dotNetRef.invokeMethodAsync('ResizedParent', sizeInfo);
+        }
     }
     //window.addEventListener('resize', handleResize)
     element.addEventListener('touchmove', e => {
@@ -22,6 +24,7 @@ export function initBhs(element, dotNetRef, options) {
     element.addEventListener('scrollend', () => {
         const state = scrollers.get(element);
         if (!state) return;
+        updateNearest(element);
         state.priorityScrollInProgress = false;
     });
     var parentWrapper = element.closest('.bhs');
@@ -236,9 +239,9 @@ export function snapToPrevious(element) {
     }
 }
 
-export function snapToNearest(element) {
+export function snapToNearest(element, scrollToBehavior = 'smooth', priority = true) {
     const state = scrollers.get(element);
-    snapToIndex(element, state.nearestIndex);
+    snapToIndex(element, state.nearestIndex, scrollToBehavior, priority);
 }
 
 export function snapToIndex(element, index, scrollToBehavior = 'smooth', priority = true) {
