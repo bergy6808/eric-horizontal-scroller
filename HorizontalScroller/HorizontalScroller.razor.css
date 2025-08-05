@@ -1,8 +1,10 @@
 .bhs-container {
     overflow-x: clip;
     overflow-y: hidden;
-    cursor: grab;
     position: relative;
+}
+.bhs-container.allow-grab {
+    cursor: grab;
 }
 
 .bhs-content {

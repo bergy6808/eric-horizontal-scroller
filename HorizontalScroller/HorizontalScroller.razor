@@ -23,7 +23,7 @@
         </div>
     }
     <div style="@(AllowOverflow ? $"overflow-x: clip;margin-left:-{OverflowAllowedWidthOnLeft};" : "") @(_preRenderMode ? "visibility:hidden;position:absolute;left:0;right:0;top:0;" : "")">
-        <div class="bhs-container" style="--item-spacing:@ItemSpacing;--container-width:@_itemsFullWidth;--end-spacer-width:@EndSpacerWidth;width:@(AllowOverflow ? $"calc({OverflowViewportWidth} + {OverflowAllowedWidthOnLeft})" : "initial");padding-left:@(AllowOverflow? OverflowAllowedWidthOnLeft : "0");max-height: 4000px;@(_maxHeight.HasValue ? $"transition: max-height 0.7s cubic-bezier(0, 1, 0, 1);max-height: {_maxHeight}px;" : "")"
+        <div class="bhs-container" style="--item-spacing:@ItemSpacing;--container-width:@_itemsFullWidth;--end-spacer-width:@EndSpacerWidth;width:@(AllowOverflow ? $"calc({OverflowViewportWidth} + {OverflowAllowedWidthOnLeft})" : "initial");padding-left:@(AllowOverflow? OverflowAllowedWidthOnLeft : "0");max-height: 4000px;@(EnableDrag ? $"cursor: grab;" : "") @(_maxHeight.HasValue ? $"transition: max-height 0.7s cubic-bezier(0, 1, 0, 1);max-height: {_maxHeight}px;" : "")"
              @onmousedown="EventUtil.AsNonRenderingEventHandler<MouseEventArgs>(OnMouseDown)"
              @onmouseup="EventUtil.AsNonRenderingEventHandler<MouseEventArgs>(OnMouseUp)"
              @onmouseleave="EventUtil.AsNonRenderingEventHandler<MouseEventArgs>(OnMouseUp)"
