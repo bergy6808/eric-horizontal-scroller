@@ -146,12 +146,13 @@
 
     [Inject] private IJSRuntime Js { get; set; } = null!;
 
-    private bool AllowCallbacks => _goToIndexAfterRender == null && _scrollerModule != null && !_preRenderMode;
+    private bool AllowCallbacks => _goToIndexAfterRender == null && ScrollerModule != null && !_preRenderMode;
 
     private List<TItem>? _realItems;
     private List<TItem>? _items;
     private ElementReference? _scrollerRef;
     private IJSObjectReference? _scrollerModule;
+    private IJSObjectReference? ScrollerModule => _isDisposed ? null : _scrollerModule;
     private DotNetObjectReference<HorizontalScroller<TItem>>? _dotNetRef;
     private string _itemsFullWidth = "75vw";
     private bool _needResnapAfterResize;
@@ -192,7 +193,7 @@
             return;
 
         var requiredSelectedIndex = PublicIndexToLocalIndex(SelectedIndex);
-        if (_scrollerModule != null && _localSelectedIndex != requiredSelectedIndex && !_isDragging && _initialized)
+        if (ScrollerModule != null && _localSelectedIndex != requiredSelectedIndex && !_isDragging && _initialized)
         {
             LogMessage($"Scrolling to index by parameter : {requiredSelectedIndex}");
             await SnapToIndexAsync(requiredSelectedIndex, false);
@@ -214,43 +215,16 @@
     private void ManageLoopItems()
     {
         if (EnableLooping && _realItems?.Any() == true)
-            while(_localSelectedIndex > _items.Count - 30)
+            while (_localSelectedIndex > _items.Count - 30)
                 _items.AddRange(_realItems);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-#if DEBUG
-        string moduleLocation = "./_content/BlazorHorizontalScroller/horizontalScroller.js";
-#else
-        string moduleLocation = "./_content/BlazorHorizontalScroller/horizontalScroller.min.js" + "?v=" + (Assembly.GetAssembly(typeof(HorizontalScroller<string>))?.GetName().Version?.ToString() ?? "1");
-#endif
         _dotNetRef ??= DotNetObjectReference.Create(this);
 
-        if (_scrollerModule is null && !_isDisposed)
-        {
-            try
-            {
-                _scrollerModule = await Js.InvokeAsync<IJSObjectReference>("import", moduleLocation);
-                if (_scrollerModule != null && !_isDisposed) // Navigation might have happened while we were waiting for the import above, which is why we once again check for disposal.
-                {
-                    await _scrollerModule.InvokeVoidAsync("initBhs", _scrollerRef, _dotNetRef, new
-                    {
-                        startIndex = SelectedIndex,
-                        inertiaDecay = (InertiaDecay),
-                        enableSnapping = EnableSnapping,
-                        enableDrag = EnableDrag,
-                        log = LogToConsole
-                    });
-                    _initialized = true;
-                }
-            }
-            catch (JSDisconnectedException)
-            {
-                // Ignore: The user navigated away/closed the tab during the import.
-                return;
-            }
-        }
+        await InitModule();
+
         if (_goToIndexAfterRender.HasValue)
         {
             var goingTo = _goToIndexAfterRender.Value;
@@ -273,6 +247,34 @@
         await AdjustHeightIfNecessary();
     }
 
+    private async Task InitModule()
+    {
+#if DEBUG
+        string moduleLocation = "./_content/BlazorHorizontalScroller/horizontalScroller.js";
+#else
+        string moduleLocation = "./_content/BlazorHorizontalScroller/horizontalScroller.min.js" + "?v=" + (Assembly.GetAssembly(typeof(HorizontalScroller<string>))?.GetName().Version?.ToString() ?? "1");
+#endif
+
+        if (_scrollerModule is not null || _isDisposed)
+            return;
+
+        try
+        {
+            _scrollerModule = await Js.InvokeAsync<IJSObjectReference>("import", moduleLocation);
+
+            await _scrollerModule.InvokeVoidAsync("initBhs", _scrollerRef, _dotNetRef, new
+            {
+                startIndex = SelectedIndex,
+                inertiaDecay = (InertiaDecay),
+                enableSnapping = EnableSnapping,
+                enableDrag = EnableDrag,
+                log = LogToConsole
+            });
+            _initialized = true;
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or TaskCanceledException or ObjectDisposedException) { }
+    }
+
     private void LeavePrerenderMode()
     {
         if (!_preRenderMode)
@@ -289,50 +291,43 @@
     /// <returns></returns>
     public async Task SyncWidth()
     {
-        try
-        {
-            if (_scrollerModule != null && (UseRelativeWidth()))
-                _widthInfo = await _scrollerModule.InvokeAsync<WidthInfo>("getSizeInfo", _scrollerRef);
-            FullWidthChanged();
-        }
-        catch (ObjectDisposedException e)
-        {
-            LogMessage("Cannot sync width, object disposed");
-        }
+        if (ScrollerModule != null && (UseRelativeWidth()))
+            _widthInfo = await SafeInvokeAsync<WidthInfo>("getSizeInfo", _scrollerRef);
+        FullWidthChanged();
     }
 
     private async Task OnMouseDown(MouseEventArgs e)
     {
-        if (_scrollerModule != null && EnableDrag)
+        if (ScrollerModule != null && EnableDrag)
         {
-            await _scrollerModule.InvokeVoidAsync("startDrag", _scrollerRef, e.ClientX);
+            await SafeInvokeVoidAsync("startDrag", _scrollerRef, e.ClientX);
             _isDragging = true;
         }
     }
 
     private async Task OnMouseUp(MouseEventArgs e)
     {
-        if (_scrollerModule != null)
+        if (ScrollerModule != null)
         {
-            await _scrollerModule.InvokeVoidAsync("endDrag", _scrollerRef);
+            await SafeInvokeVoidAsync("endDrag", _scrollerRef);
             _isDragging = false;
         }
     }
 
     private async Task OnTouchStart(TouchEventArgs e)
     {
-        if (_scrollerModule != null && e.Touches.Length > 0 && EnableDrag)
+        if (ScrollerModule != null && e.Touches.Length > 0 && EnableDrag)
         {
-            await _scrollerModule.InvokeVoidAsync("startDrag", _scrollerRef, e.Touches[0].ClientX);
+            await SafeInvokeVoidAsync("startDrag", _scrollerRef, e.Touches[0].ClientX);
             _isDragging = true;
         }
     }
 
     private async Task OnTouchEnd(TouchEventArgs e)
     {
-        if (_scrollerModule != null)
+        if (ScrollerModule != null)
         {
-            await _scrollerModule.InvokeVoidAsync("endDrag", _scrollerRef);
+            await SafeInvokeVoidAsync("endDrag", _scrollerRef);
             _isDragging = false;
         }
     }
@@ -341,8 +336,8 @@
     /// </summary>
     public async Task SnapToNextItem()
     {
-        if (_scrollerModule != null)
-            await _scrollerModule.InvokeVoidAsync("snapToNext", _scrollerRef);
+        if (ScrollerModule != null)
+            await SafeInvokeVoidAsync("snapToNext", _scrollerRef);
     }
     /// <summary>
     /// Goes to the next slide. Will be different if ItemsPerSlideSelector returns something > 1.
@@ -358,8 +353,8 @@
     /// </summary>
     public async Task SnapToPreviousItem()
     {
-        if (_scrollerModule != null)
-            await _scrollerModule.InvokeVoidAsync("snapToPrevious", _scrollerRef);
+        if (ScrollerModule != null)
+            await SafeInvokeVoidAsync("snapToPrevious", _scrollerRef);
     }
     /// <summary>
     /// Goes to the previous slide. Will be different if ItemsPerSlideSelector returns something > 1.
@@ -391,10 +386,10 @@
 
     private async Task SnapToIndexAsync(int index, bool priority = true, string speed = "smooth")
     {
-        if (_scrollerModule != null)
+        if (ScrollerModule != null)
         {
             //_selectedIndex = index;
-            await _scrollerModule.InvokeVoidAsync("snapToIndex", _scrollerRef, index, speed, priority);
+            await SafeInvokeVoidAsync("snapToIndex", _scrollerRef, index, speed, priority);
         }
     }
 
@@ -417,12 +412,12 @@
 
     private async Task AdjustHeightIfNecessary()
     {
-        if (AdjustHeightOnSnap && _scrollerModule != null && _scrollerRef != null)
+        if (AdjustHeightOnSnap && ScrollerModule != null && _scrollerRef != null)
         {
             var oldHeight = _maxHeight;
             try
             {
-                _maxHeight = await _scrollerModule.InvokeAsync<double?>("getMaxVisibleHeight", _scrollerRef);
+                _maxHeight = await SafeInvokeAsync<double?>("getMaxVisibleHeight", _scrollerRef);
             }
             catch
             {
@@ -468,6 +463,30 @@
                 StateHasChanged();
             }
         }
+    }
+
+    private async ValueTask SafeInvokeVoidAsync(string identifier, params object?[]? args)
+    {
+        if (!_isDisposed && _scrollerModule is null)
+            throw new Exception("Scroller module not initialized");
+        try
+        {
+            await ScrollerModule.InvokeVoidAsync(identifier, args);
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or TaskCanceledException or ObjectDisposedException) { }
+    }
+
+
+    private async ValueTask<TValue?> SafeInvokeAsync<TValue>(string identifier, params object?[]? args)
+    {
+        if (!_isDisposed && _scrollerModule is null)
+            throw new Exception("Scroller module not initialized");
+        try
+        {
+            return await ScrollerModule.InvokeAsync<TValue>(identifier, args);
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or TaskCanceledException or ObjectDisposedException) { }
+        return default;
     }
 
     public async ValueTask DisposeAsync()
