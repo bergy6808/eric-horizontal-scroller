@@ -3,7 +3,7 @@ let scrollers = new Map();
 export function initBhs(element, dotNetRef, options) {
     var handleResize = () => {
         const state = scrollers.get(element);
-        log(options, 'resize triggered');
+        if (!state) return;
 
         if (state.lastSnapWidth > 20)
             updateNearest(element);
