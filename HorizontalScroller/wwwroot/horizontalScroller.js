@@ -28,6 +28,24 @@ export function initBhs(element, dotNetRef, options) {
         state.priorityScrollInProgress = false;
     });
     var parentWrapper = element.closest('.bhs');
+
+    var state = {
+        isDragging: false,
+        velocity: 0,
+        lastX: 0,
+        animationFrame: null,
+        snapTimeout: null,
+        currentIndex: 0,
+        visible: element.offsetParent !== null,
+        dotNetRef: dotNetRef,
+        lastSnapWidth: 0,
+        observers: Array.from([]),
+        nearestIndex: 0,
+        opts: options
+    };
+    scrollers.set(element, state);
+    // set observers
+
     // observe body
     const bodyObserver = new MutationObserver((mutationList) => {
         for (const mutation of mutationList) {
@@ -53,21 +71,8 @@ export function initBhs(element, dotNetRef, options) {
     });
     visibilityObserver.observe(element);
 
-    scrollers.set(element, {
-        isDragging: false,
-        velocity: 0,
-        lastX: 0,
-        animationFrame: null,
-        snapTimeout: null,
-        currentIndex: 0,
-        visible: element.offsetParent !== null,
-        dotNetRef: dotNetRef,
-        lastSnapWidth: 0,
-        observers: Array.from([bodyObserver, resizeObserver, visibilityObserver]),
-        //handleResize: handleResize,
-        nearestIndex: 0,
-        opts: options
-    });
+    state.observers = Array.from([bodyObserver, resizeObserver, visibilityObserver]);
+
     log(options, 'initialized');
     if (options.startIndex != 0) {
         log(options, "To start index: " + options.startIndex);
@@ -246,6 +251,8 @@ export function snapToNearest(element, scrollToBehavior = 'smooth', priority = t
 
 export function snapToIndex(element, index, scrollToBehavior = 'smooth', priority = true) {
     const state = scrollers.get(element);
+    if (!state)
+        return;
     const items = Array.from(element.querySelectorAll('.bhs-item'));
     if (items.length == 0 || isNaN(index))
         return;
