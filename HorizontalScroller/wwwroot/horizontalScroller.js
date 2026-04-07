@@ -150,6 +150,8 @@ function updateNearest(element) {
 
     const currentScroll = element.scrollLeft;
     const state = scrollers.get(element);
+    if (!state)
+        return;
 
     const items = Array.from(element.querySelectorAll('.bhs-item'));
     if (items.length == 0)
@@ -168,7 +170,7 @@ function updateNearest(element) {
             break;
     }
 
-    if (state && !isNaN(nearestIndex) && state.nearestIndex != nearestIndex) {
+    if (!isNaN(nearestIndex) && state.nearestIndex != nearestIndex) {
         state.nearestIndex = nearestIndex;
         state.dotNetRef.invokeMethodAsync("NotifyNearestIndexChanged", nearestIndex)
     }

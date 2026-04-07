@@ -1,4 +1,5 @@
 ﻿@typeparam TItem
+@using System.Diagnostics.CodeAnalysis
 @using Microsoft.JSInterop
 @using System.Reflection
 @implements IAsyncDisposable
@@ -262,14 +263,15 @@
         {
             _scrollerModule = await Js.InvokeAsync<IJSObjectReference>("import", moduleLocation);
 
-            await _scrollerModule.InvokeVoidAsync("initBhs", _scrollerRef, _dotNetRef, new
+            var options = new InitOptions
             {
-                startIndex = SelectedIndex,
-                inertiaDecay = (InertiaDecay),
-                enableSnapping = EnableSnapping,
-                enableDrag = EnableDrag,
-                log = LogToConsole
-            });
+                StartIndex = SelectedIndex,
+                InertiaDecay = InertiaDecay,
+                EnableSnapping = EnableSnapping,
+                EnableDrag = EnableDrag,
+                Log = LogToConsole
+            };
+            await _scrollerModule.InvokeVoidAsync("initBhs", _scrollerRef, _dotNetRef, options);
             _initialized = true;
         }
         catch (Exception ex) when (ex is JSDisconnectedException or TaskCanceledException or ObjectDisposedException) { }
@@ -527,6 +529,16 @@
             public Task HandleEventAsync(EventCallbackWorkItem item, object? arg) =>
                 item.InvokeAsync(arg);
         }
+    }
+
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
+    internal class InitOptions
+    {
+        public int StartIndex { get; set; }
+        public double InertiaDecay { get; set; }
+        public bool EnableSnapping { get; set; }
+        public bool EnableDrag { get; set; }
+        public bool Log { get; set; }
     }
 
 }
