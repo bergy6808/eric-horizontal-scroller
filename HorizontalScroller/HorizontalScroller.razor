@@ -291,6 +291,7 @@
     /// Manually triggers a width detection, in case the parent width changed and something prevents the component to detect it.
     /// </summary>
     /// <returns></returns>
+    [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(WidthInfo))]
     public async Task SyncWidth()
     {
         if (ScrollerModule != null && (UseRelativeWidth()))
