@@ -184,6 +184,7 @@ function getStyle(el, prop) {
 }
 function visibilityChanged(element) {
     const state = scrollers.get(element);
+    if (!state) return;
     var was = state.visible;
     state.visible = element.offsetParent !== null;
     if (!was && state.visible) {
