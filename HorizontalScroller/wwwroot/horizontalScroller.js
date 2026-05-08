@@ -194,6 +194,8 @@ function visibilityChanged(element) {
 function getVisibleItems(element, index) {
     var parentWrapper = element.closest('.bhs');
     const state = scrollers.get(element);
+    if (!state)
+        return [index];
     var width = parentWrapper.offsetWidth;
     const items = Array.from(element.querySelectorAll('.bhs-item'));
     if (width == 0)
@@ -216,6 +218,8 @@ function log(options, m) {
 }
 export function getMaxVisibleHeight(element) {
     const state = scrollers.get(element);
+    if (!state)
+        return 0;
     var index = state.currentIndex;
     var visibleItems = getVisibleItems(element, index);
     var childItems = visibleItems.map(x => x.querySelector('div'));
@@ -234,6 +238,8 @@ export function getMaxVisibleHeight(element) {
 export function snapToNext(element) {
     const items = Array.from(element.querySelectorAll('.bhs-item'))
     const state = scrollers.get(element);
+    if (!state)
+        return;
 
     if (state.currentIndex < items.length - 1) {
         snapToIndex(element, state.currentIndex + 1);
@@ -241,6 +247,8 @@ export function snapToNext(element) {
 }
 export function snapToPrevious(element) {
     const state = scrollers.get(element);
+    if (!state)
+        return;
 
     if (state.currentIndex > 0) {
         snapToIndex(element, state.currentIndex - 1);
@@ -249,7 +257,9 @@ export function snapToPrevious(element) {
 
 export function snapToNearest(element, scrollToBehavior = 'smooth', priority = true) {
     const state = scrollers.get(element);
-    snapToIndex(element, state.nearestIndex, scrollToBehavior, priority);
+    if (!state)
+        return;
+        snapToIndex(element, state.nearestIndex, scrollToBehavior, priority);
 }
 
 export function snapToIndex(element, index, scrollToBehavior = 'smooth', priority = true) {
