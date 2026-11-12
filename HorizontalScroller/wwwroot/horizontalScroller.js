@@ -5,6 +5,12 @@ export function initBhs(element, dotNetRef, options) {
         const state = scrollers.get(element);
         if (!state) return;
 
+        if (state.initializing) {
+            tryInitializePosition(element);
+            dotNetRef.invokeMethodAsync('ResizedParent', getSizeInfo(element));
+            return;
+        }
+
         if (state.lastSnapWidth > 20)
             updateNearest(element);
         var sizeInfo = getSizeInfo(element);
@@ -35,6 +41,8 @@ export function initBhs(element, dotNetRef, options) {
         lastX: 0,
         animationFrame: null,
         snapTimeout: null,
+        initializing: true,
+        initialIndex: null,
         currentIndex: 0,
         visible: element.offsetParent !== null,
         dotNetRef: dotNetRef,
@@ -74,10 +82,29 @@ export function initBhs(element, dotNetRef, options) {
     state.observers = Array.from([bodyObserver, resizeObserver, visibilityObserver]);
 
     log(options, 'initialized');
-    if (options.startIndex != 0) {
-        log(options, "To start index: " + options.startIndex);
-        snapToIndex(element, options.startIndex, 'auto');
-    }
+}
+
+export function initializePosition(element, index) {
+    const state = scrollers.get(element);
+    if (!state || !state.initializing) return;
+
+    state.initialIndex = index;
+    return tryInitializePosition(element);
+}
+
+function tryInitializePosition(element) {
+    const state = scrollers.get(element);
+    if (!state || !state.initializing || state.initialIndex === null) return;
+
+    const items = element.querySelectorAll('.bhs-item');
+    if (element.clientWidth === 0 || getSizeInfo(element).ParentWidth <= 20 || items.length === 0)
+        return;
+    if (items.length > 1 && items[1].offsetLeft <= items[0].offsetLeft)
+        return;
+
+    snapToIndex(element, state.initialIndex, 'instant', false);
+    state.initializing = false;
+    return state.dotNetRef.invokeMethodAsync('NotifyInitialized', state.currentIndex);
 }
 
 export function getSizeInfo(element) {
@@ -91,7 +118,7 @@ export function getSizeInfo(element) {
 
 export function startDrag(element, clientX) {
     const state = scrollers.get(element);
-    if (!state) return;
+    if (!state || state.initializing) return;
 
     state.isDragging = true;
     state.lastX = clientX;
@@ -150,7 +177,7 @@ function updateNearest(element) {
 
     const currentScroll = element.scrollLeft;
     const state = scrollers.get(element);
-    if (!state)
+    if (!state || state.initializing)
         return;
 
     const items = Array.from(element.querySelectorAll('.bhs-item'));
@@ -185,6 +212,10 @@ function getStyle(el, prop) {
 function visibilityChanged(element) {
     const state = scrollers.get(element);
     if (!state) return;
+    if (state.initializing) {
+        tryInitializePosition(element);
+        return;
+    }
     var was = state.visible;
     state.visible = element.offsetParent !== null;
     if (!was && state.visible) {
@@ -293,7 +324,7 @@ export function snapToIndex(element, index, scrollToBehavior = 'smooth', priorit
         });
     }
 
-    if (oldIndex != state.currentIndex)
+    if (!state.initializing && oldIndex != state.currentIndex)
         state.dotNetRef.invokeMethodAsync("NotifySnapToIndex", index)
 }
 

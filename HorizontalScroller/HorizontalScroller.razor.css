@@ -1,5 +1,5 @@
 .bhs-container {
-    overflow-x: clip;
+    overflow-x: hidden;
     overflow-y: hidden;
     position: relative;
 }

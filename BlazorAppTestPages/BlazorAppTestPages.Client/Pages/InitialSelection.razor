@@ -1,0 +1,73 @@
+@page "/initial-selection"
+@rendermode InteractiveWebAssembly
+@using BlazorHorizontalScroller
+
+<PageTitle>Initial selection regression</PageTitle>
+<h1>Initial selection regression</h1>
+<p>Each carousel must start on its requested card without recording a selection callback. Use the controls or drag afterward to check normal updates.</p>
+<button class="btn btn-primary" @onclick="Reset">Recreate carousels</button>
+<button class="btn btn-secondary" @onclick="() => _narrow = !_narrow">Resize containers</button>
+<button class="btn btn-secondary" @onclick="() => _showHidden = !_showHidden">Toggle initially hidden carousel</button>
+
+@foreach (var test in _cases)
+{
+    <section @key="test" data-case="@test.Name" style="width:@(_narrow ? "65%" : "100%"); margin-top:2rem;">
+        <h2>@test.Name</h2>
+        <p>Initial index: @test.InitialIndex; bound index: <span class="selected-index">@test.SelectedIndex</span></p>
+        <p>Selection callbacks: <span class="selection-callbacks">@string.Join(", ", test.Changes)</span></p>
+        <p>Snap callbacks: <span class="snap-callbacks">@string.Join(", ", test.Snaps)</span></p>
+        <button class="btn btn-secondary" @onclick="() => test.SelectedIndex = 5">Set parameter to 5</button>
+        <button class="btn btn-secondary" @onclick="() => test.Scroller!.SnapToPreviousItem()">Previous</button>
+        <button class="btn btn-secondary" @onclick="() => test.Scroller!.SnapToNextItem()">Next</button>
+        <div style="display:@(test.Hidden && !_showHidden ? "none" : "block");">
+            <HorizontalScroller @ref="test.Scroller" Items="Enumerable.Range(0, 10)"
+                                ItemWidth="@(test.RelativeWidth ? "auto" : "180px")"
+                                ItemsPerSlideSelector="test.ItemsPerSlideSelector"
+                                EnableLooping="test.Looping" EndSpacerWidth="100vw"
+                                @bind-SelectedIndex="test.SelectedIndex"
+                                @bind-SelectedIndex:after="() => test.Changes.Add(test.SelectedIndex)"
+                                OnSnapped="index => test.Snaps.Add(index)">
+                <ItemTemplate>
+                    <div class="card bg-primary" style="height:120px;">
+                        <div class="card-body">Card #@context</div>
+                    </div>
+                </ItemTemplate>
+            </HorizontalScroller>
+        </div>
+    </section>
+}
+
+@code {
+    private List<SelectionCase> _cases = CreateCases();
+    private bool _narrow;
+    private bool _showHidden;
+
+    private void Reset()
+    {
+        _showHidden = false;
+        _cases = CreateCases();
+    }
+
+    private static List<SelectionCase> CreateCases() =>
+    [
+        new("Fixed width", 3, false),
+        new("Relative width", 3, true),
+        new("Default zero", 0, true),
+        new("Looping", 3, true, looping: true),
+        new("Initially hidden", 3, true, hidden: true)
+    ];
+
+    private sealed class SelectionCase(string name, int initialIndex, bool relativeWidth, bool looping = false, bool hidden = false)
+    {
+        public string Name { get; } = name;
+        public int InitialIndex { get; } = initialIndex;
+        public int SelectedIndex { get; set; } = initialIndex;
+        public bool RelativeWidth { get; } = relativeWidth;
+        public bool Looping { get; } = looping;
+        public bool Hidden { get; } = hidden;
+        public Func<WidthInfo?, int>? ItemsPerSlideSelector { get; } = relativeWidth ? _ => 1 : null;
+        public List<int> Changes { get; } = [];
+        public List<int> Snaps { get; } = [];
+        public HorizontalScroller<int>? Scroller;
+    }
+}

@@ -23,7 +23,7 @@
             }
         </div>
     }
-    <div style="@(AllowOverflow ? $"overflow-x: clip;margin-left:-{OverflowAllowedWidthOnLeft};" : "") @(_preRenderMode ? "visibility:hidden;position:absolute;left:0;right:0;top:0;" : "")">
+    <div style="@(AllowOverflow ? $"margin-left:-{OverflowAllowedWidthOnLeft};" : "") @(_preRenderMode ? "visibility:hidden;position:absolute;left:0;right:0;top:0;" : "")">
         <div class="bhs-container" style="--item-spacing:@ItemSpacing;--container-width:@_itemsFullWidth;--end-spacer-width:@EndSpacerWidth;width:@(AllowOverflow ? $"calc({OverflowViewportWidth} + {OverflowAllowedWidthOnLeft})" : "initial");padding-left:@(AllowOverflow? OverflowAllowedWidthOnLeft : "0");max-height: 4000px;@(EnableDrag ? $"cursor: grab;" : "") @(_maxHeight.HasValue ? $"transition: max-height 0.7s cubic-bezier(0, 1, 0, 1);max-height: {_maxHeight}px;" : "")"
              @onmousedown="EventUtil.AsNonRenderingEventHandler<MouseEventArgs>(OnMouseDown)"
              @onmouseup="EventUtil.AsNonRenderingEventHandler<MouseEventArgs>(OnMouseUp)"
@@ -147,7 +147,7 @@
 
     [Inject] private IJSRuntime Js { get; set; } = null!;
 
-    private bool AllowCallbacks => _goToIndexAfterRender == null && ScrollerModule != null && !_preRenderMode;
+    private bool AllowCallbacks => _initialized && ScrollerModule != null && !_preRenderMode;
 
     private List<TItem>? _realItems;
     private List<TItem>? _items;
@@ -159,7 +159,6 @@
     private bool _needResnapAfterResize;
     private WidthInfo? _widthInfo;
     private int _localSelectedIndex; // local index
-    private int? _goToIndexAfterRender;
     private bool _isDragging;
     private bool _preRenderMode;
     private bool _initialized;
@@ -226,23 +225,18 @@
 
         await InitModule();
 
-        if (_goToIndexAfterRender.HasValue)
+        if (!_preRenderMode && !_initialized && ScrollerModule != null)
         {
-            var goingTo = _goToIndexAfterRender.Value;
-            _goToIndexAfterRender = null;
             _needResnapAfterResize = false;
-            LogMessage($"Scrolling to init position after prerender : {goingTo}");
-            await SnapToIndexAsync(goingTo, true, "auto");
+            await SafeInvokeVoidAsync("initializePosition", _scrollerRef, PublicIndexToLocalIndex(SelectedIndex));
         }
-        else if (_needResnapAfterResize)
+        else if (_initialized && _needResnapAfterResize)
         {
             _needResnapAfterResize = false;
             LogMessage($"Scrolling to set position after resize : {SelectedIndex}");
-            await SnapToIndexAsync(SelectedIndex, false, "auto");
+            await SnapToIndexAsync(PublicIndexToLocalIndex(SelectedIndex), false, "auto");
         }
 
-        if (firstRender && UseRelativeWidth())
-            await Task.Delay(50); // Wait for the DOM to settle after the initial render
         await SyncWidth();
         LeavePrerenderMode();
         await AdjustHeightIfNecessary();
@@ -265,14 +259,12 @@
 
             var options = new InitOptions
             {
-                StartIndex = SelectedIndex,
                 InertiaDecay = InertiaDecay,
                 EnableSnapping = EnableSnapping,
                 EnableDrag = EnableDrag,
                 Log = LogToConsole
             };
             await _scrollerModule.InvokeVoidAsync("initBhs", _scrollerRef, _dotNetRef, options);
-            _initialized = true;
         }
         catch (Exception ex) when (ex is JSDisconnectedException or TaskCanceledException or ObjectDisposedException) { }
     }
@@ -281,8 +273,6 @@
     {
         if (!_preRenderMode)
             return;
-        if (_widthInfo != null && _preRenderMode && SelectedIndex != 0)
-            _goToIndexAfterRender = SelectedIndex;
 
         _preRenderMode = false;
         StateHasChanged();
@@ -432,8 +422,22 @@
     }
 
     [JSInvokable]
+    public async Task NotifyInitialized(int index)
+    {
+        if (_isDisposed || _initialized)
+            return;
+
+        _localSelectedIndex = index;
+        _initialized = true;
+        await AdjustHeightIfNecessary();
+    }
+
+    [JSInvokable]
     public async Task NotifyNearestIndexChanged(int index)
     {
+        if (!AllowCallbacks)
+            return;
+
         if (_localSelectedIndex != index)
         {
             _localSelectedIndex = index;
@@ -535,7 +539,6 @@
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
     internal class InitOptions
     {
-        public int StartIndex { get; set; }
         public double InertiaDecay { get; set; }
         public bool EnableSnapping { get; set; }
         public bool EnableDrag { get; set; }
