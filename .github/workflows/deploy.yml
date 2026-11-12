@@ -30,6 +30,6 @@ jobs:
     - name: Pack
       run: dotnet pack HorizontalScroller --configuration Release /p:Version=${VERSION} --no-build --output .
     - name: Push
-      run: dotnet nuget push BlazorHorizontalScroller.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${NUGET_TOKEN}
+      run: dotnet nuget push BlazorHorizontalScroller.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json
       env:
         NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
