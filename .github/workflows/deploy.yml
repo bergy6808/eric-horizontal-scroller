@@ -6,6 +6,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      id-token: write  # enable GitHub OIDC token issuance for this job
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -16,6 +18,12 @@ jobs:
     - name: Set VERSION variable from tag
       run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
 
+    # Get a short-lived NuGet API key
+    - name: NuGet login (OIDC → temp API key)
+      uses: NuGet/login@v1
+      id: login
+      with:
+        user: bergy6808
       
     - name: auto minify files
       uses: nizarmah/auto-minify@v3
@@ -30,6 +38,5 @@ jobs:
     - name: Pack
       run: dotnet pack HorizontalScroller --configuration Release /p:Version=${VERSION} --no-build --output .
     - name: Push
-      run: dotnet nuget push BlazorHorizontalScroller.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json
-      env:
-        NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
+      run: dotnet nuget push BlazorHorizontalScroller.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{steps.login.outputs.NUGET_API_KEY}}
+      
